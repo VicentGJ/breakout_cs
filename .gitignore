@@ -1,0 +1,32 @@
+# Build results
+bin/
+obj/
+
+# NuGet
+*.nupkg
+.nuget/
+packages/
+!**/packages/build/
+
+# Rider
+.idea/
+*.userprefs
+
+# VS Code
+.vscode/
+
+# User-specific
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# macOS
+.DS_Store
+
+# Logs
+*.log
+
+# Editor
+*.swp
+*~
