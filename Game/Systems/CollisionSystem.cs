@@ -135,8 +135,41 @@ internal sealed class CollisionSystem
             return;
         }
 
-        ballTransform.Position.X = RectangleRight(rectangle) + ballRadius + 0.5f;
-        ball.Velocity.X = MathF.Abs(ball.Velocity.X);
+        if (ball.PreviousPosition.X - ballRadius >= RectangleRight(rectangle))
+        {
+            ballTransform.Position.X = RectangleRight(rectangle) + ballRadius + 0.5f;
+            ball.Velocity.X = MathF.Abs(ball.Velocity.X);
+            scene.BallObject.Set(ballTransform);
+            scene.BallObject.Set(ball);
+            return;
+        }
+
+        float overlapTop = ballTransform.Position.Y + ballRadius - rectangle.Y;
+        float overlapBottom = RectangleBottom(rectangle) - (ballTransform.Position.Y - ballRadius);
+        float overlapLeft = ballTransform.Position.X + ballRadius - rectangle.X;
+        float overlapRight = RectangleRight(rectangle) - (ballTransform.Position.X - ballRadius);
+
+        if (overlapTop <= overlapBottom && overlapTop <= overlapLeft && overlapTop <= overlapRight)
+        {
+            ballTransform.Position.Y = rectangle.Y - ballRadius - 0.5f;
+            ball.Velocity.Y = -MathF.Abs(ball.Velocity.Y);
+        }
+        else if (overlapBottom <= overlapLeft && overlapBottom <= overlapRight)
+        {
+            ballTransform.Position.Y = RectangleBottom(rectangle) + ballRadius + 0.5f;
+            ball.Velocity.Y = MathF.Abs(ball.Velocity.Y);
+        }
+        else if (overlapLeft <= overlapRight)
+        {
+            ballTransform.Position.X = rectangle.X - ballRadius - 0.5f;
+            ball.Velocity.X = -MathF.Abs(ball.Velocity.X);
+        }
+        else
+        {
+            ballTransform.Position.X = RectangleRight(rectangle) + ballRadius + 0.5f;
+            ball.Velocity.X = MathF.Abs(ball.Velocity.X);
+        }
+
         scene.BallObject.Set(ballTransform);
         scene.BallObject.Set(ball);
     }
