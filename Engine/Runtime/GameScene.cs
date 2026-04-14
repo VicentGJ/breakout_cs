@@ -2,8 +2,8 @@ namespace Breakout;
 
 internal interface IGameScene
 {
-    void Update(FrameContext context);
-    void Draw(FrameContext context);
+    void Update();
+    void Draw();
 }
 
 internal sealed class SceneManager
@@ -15,7 +15,7 @@ internal sealed class SceneManager
         _scene = scene;
     }
 
-    public void Update(FrameContext context) => _scene.Update(context);
+    public void Update() => _scene.Update();
 
-    public void Draw(FrameContext context) => _scene.Draw(context);
+    public void Draw() => _scene.Draw();
 }

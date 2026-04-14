@@ -52,11 +52,11 @@ internal sealed class BreakoutScene : IGameScene
 
     internal float ArenaBottom => Arena.Y + Arena.Height;
 
-    public void Update(FrameContext context)
+    public void Update()
     {
         if (Phase is GamePhase.Serving or GamePhase.Playing)
         {
-            _paddleSystem.Update(this, context.Input, context.DeltaTime);
+            _paddleSystem.Update(this, InputState.Poll(), Time.DeltaTime);
         }
 
         switch (Phase)
@@ -64,7 +64,7 @@ internal sealed class BreakoutScene : IGameScene
             case GamePhase.Serving:
                 _ballSystem.StickToPaddle(this);
 
-                if (context.Input.LaunchPressed)
+                if (InputState.Poll().LaunchPressed)
                 {
                     _ballSystem.Launch(this);
                 }
@@ -72,14 +72,14 @@ internal sealed class BreakoutScene : IGameScene
                 break;
 
             case GamePhase.Playing:
-                _ballSystem.Update(this, context.DeltaTime);
+                _ballSystem.Update(this, Time.DeltaTime);
                 _collisionSystem.Resolve(this);
                 _roundSystem.HandleBallOutOfBounds(this);
                 break;
 
             case GamePhase.Won:
             case GamePhase.Lost:
-                if (context.Input.ConfirmPressed)
+                if (InputState.Poll().ConfirmPressed)
                 {
                     _roundSystem.StartNewGame(this);
                 }
@@ -88,7 +88,7 @@ internal sealed class BreakoutScene : IGameScene
         }
     }
 
-    public void Draw(FrameContext context)
+    public void Draw()
     {
         _renderer.Draw();
     }

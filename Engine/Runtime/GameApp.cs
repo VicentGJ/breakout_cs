@@ -24,12 +24,13 @@ internal sealed class GameApp
 
         while (!Raylib.WindowShouldClose())
         {
-            FrameContext frame = new(Raylib.GetFrameTime(), _windowWidth, _windowHeight, InputState.Poll());
+            Time.UnscaledDeltaTime = Raylib.GetFrameTime();
+            Time.DeltaTime = Time.UnscaledDeltaTime * Time.TimeScale;
 
-            _sceneManager.Update(frame);
+            _sceneManager.Update();
 
             Raylib.BeginDrawing();
-            _sceneManager.Draw(frame);
+            _sceneManager.Draw();
             Raylib.EndDrawing();
         }
 
