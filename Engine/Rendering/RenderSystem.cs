@@ -20,7 +20,7 @@ internal sealed class RenderSystem
 
         foreach (GameObject gameObject in objects)
         {
-            if (!gameObject.IsActive || !gameObject.TryGet(out Transform2DComponent transform) || !gameObject.TryGet(out CanvasItemComponent canvasItem) || !canvasItem.Visible)
+            if (!gameObject.IsActive || !gameObject.TryGet(out CanvasItemComponent canvasItem) || !canvasItem.Visible)
             {
                 continue;
             }
@@ -32,7 +32,7 @@ internal sealed class RenderSystem
                     continue;
                 }
 
-                _entries.Add(new RenderEntry(gameObject, transform, canvasItem, handler));
+                _entries.Add(new RenderEntry(gameObject, gameObject.Transform2D, canvasItem, handler));
                 break;
             }
         }
@@ -45,14 +45,14 @@ internal sealed class RenderSystem
         }
     }
 
-    private readonly record struct RenderEntry(GameObject GameObject, Transform2DComponent Transform, CanvasItemComponent CanvasItem, IRenderComponentHandler Handler);
+    private readonly record struct RenderEntry(GameObject GameObject, Transform2D Transform, CanvasItemComponent CanvasItem, IRenderComponentHandler Handler);
 }
 
 internal interface IRenderComponentHandler
 {
     bool CanDraw(GameObject gameObject);
 
-    void Draw(GameObject gameObject, in Transform2DComponent transform, in CanvasItemComponent canvasItem);
+    void Draw(GameObject gameObject, in Transform2D transform, in CanvasItemComponent canvasItem);
 }
 
 internal abstract class RenderComponentHandler<T> : IRenderComponentHandler where T : struct, IComponent
@@ -62,12 +62,12 @@ internal abstract class RenderComponentHandler<T> : IRenderComponentHandler wher
         return gameObject.Has<T>();
     }
 
-    public void Draw(GameObject gameObject, in Transform2DComponent transform, in CanvasItemComponent canvasItem)
+    public void Draw(GameObject gameObject, in Transform2D transform, in CanvasItemComponent canvasItem)
     {
         Draw(gameObject, transform, canvasItem, gameObject.Get<T>());
     }
 
-    protected abstract void Draw(GameObject gameObject, in Transform2DComponent transform, in CanvasItemComponent canvasItem, in T renderer);
+    protected abstract void Draw(GameObject gameObject, in Transform2D transform, in CanvasItemComponent canvasItem, in T renderer);
 
     protected static Color Modulate(Color color, Color modulate)
     {
@@ -81,7 +81,7 @@ internal abstract class RenderComponentHandler<T> : IRenderComponentHandler wher
 
 internal sealed class RectangleRenderHandler : RenderComponentHandler<RectangleRendererComponent>
 {
-    protected override void Draw(GameObject gameObject, in Transform2DComponent transform, in CanvasItemComponent canvasItem, in RectangleRendererComponent renderer)
+    protected override void Draw(GameObject gameObject, in Transform2D transform, in CanvasItemComponent canvasItem, in RectangleRendererComponent renderer)
     {
         Vector2 size = Vector2.Multiply(renderer.Size, transform.Scale);
         Rectangle rectangle = new(transform.Position.X + renderer.Offset.X, transform.Position.Y + renderer.Offset.Y, size.X, size.Y);
@@ -99,7 +99,7 @@ internal sealed class RectangleRenderHandler : RenderComponentHandler<RectangleR
 
 internal sealed class CircleRenderHandler : RenderComponentHandler<CircleRendererComponent>
 {
-    protected override void Draw(GameObject gameObject, in Transform2DComponent transform, in CanvasItemComponent canvasItem, in CircleRendererComponent renderer)
+    protected override void Draw(GameObject gameObject, in Transform2D transform, in CanvasItemComponent canvasItem, in CircleRendererComponent renderer)
     {
         Vector2 center = transform.Position + renderer.Offset;
         float scale = MathF.Max(MathF.Abs(transform.Scale.X), MathF.Abs(transform.Scale.Y));
@@ -117,7 +117,7 @@ internal sealed class CircleRenderHandler : RenderComponentHandler<CircleRendere
 
 internal sealed class TextRenderHandler : RenderComponentHandler<TextRendererComponent>
 {
-    protected override void Draw(GameObject gameObject, in Transform2DComponent transform, in CanvasItemComponent canvasItem, in TextRendererComponent renderer)
+    protected override void Draw(GameObject gameObject, in Transform2D transform, in CanvasItemComponent canvasItem, in TextRendererComponent renderer)
     {
         Vector2 position = transform.Position + renderer.Offset;
         Raylib.DrawText(renderer.Text, (int)position.X, (int)position.Y, renderer.FontSize, Modulate(renderer.Color, canvasItem.Modulate));

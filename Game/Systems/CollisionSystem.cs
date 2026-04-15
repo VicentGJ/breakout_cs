@@ -14,7 +14,7 @@ internal sealed class CollisionSystem
 
     private static void ResolveWallCollisions(BreakoutScene scene)
     {
-        Transform2DComponent ballTransform = scene.BallObject.Get<Transform2DComponent>();
+        Transform2D ballTransform = scene.BallObject.Transform2D;
         BallComponent ball = scene.BallObject.Get<BallComponent>();
         float ballRadius = GameObjectGeometry.GetCircleRadius(scene.BallObject);
 
@@ -35,14 +35,14 @@ internal sealed class CollisionSystem
             ball.Velocity.Y = MathF.Abs(ball.Velocity.Y);
         }
 
-        scene.BallObject.Set(ballTransform);
+        scene.BallObject.Transform2D = ballTransform;
         scene.BallObject.Set(ball);
     }
 
     private static void ResolvePaddleCollision(BreakoutScene scene)
     {
         Rectangle paddleBounds = GameObjectGeometry.GetRectangle(scene.PaddleObject);
-        Transform2DComponent ballTransform = scene.BallObject.Get<Transform2DComponent>();
+        Transform2D ballTransform = scene.BallObject.Transform2D;
         BallComponent ball = scene.BallObject.Get<BallComponent>();
         float ballRadius = GameObjectGeometry.GetCircleRadius(scene.BallObject);
         float paddleCenterX = paddleBounds.X + paddleBounds.Width * 0.5f;
@@ -58,13 +58,13 @@ internal sealed class CollisionSystem
         ballTransform.Position.Y = paddleBounds.Y - ballRadius - 0.5f;
         ball.Velocity = Vector2.Normalize(new Vector2(bounceX, -1f)) * BreakoutRules.BallSpeed;
 
-        scene.BallObject.Set(ballTransform);
+        scene.BallObject.Transform2D = ballTransform;
         scene.BallObject.Set(ball);
     }
 
     private static void ResolveBrickCollision(BreakoutScene scene)
     {
-        Transform2DComponent ballTransform = scene.BallObject.Get<Transform2DComponent>();
+        Transform2D ballTransform = scene.BallObject.Transform2D;
         BallComponent ball = scene.BallObject.Get<BallComponent>();
         float ballRadius = GameObjectGeometry.GetCircleRadius(scene.BallObject);
 
@@ -104,7 +104,7 @@ internal sealed class CollisionSystem
 
     private static void BounceBallFromRectangle(BreakoutScene scene, Rectangle rectangle)
     {
-        Transform2DComponent ballTransform = scene.BallObject.Get<Transform2DComponent>();
+        Transform2D ballTransform = scene.BallObject.Transform2D;
         BallComponent ball = scene.BallObject.Get<BallComponent>();
         float ballRadius = GameObjectGeometry.GetCircleRadius(scene.BallObject);
 
@@ -112,7 +112,7 @@ internal sealed class CollisionSystem
         {
             ballTransform.Position.Y = rectangle.Y - ballRadius - 0.5f;
             ball.Velocity.Y = -MathF.Abs(ball.Velocity.Y);
-            scene.BallObject.Set(ballTransform);
+            scene.BallObject.Transform2D = ballTransform;
             scene.BallObject.Set(ball);
             return;
         }
@@ -121,7 +121,7 @@ internal sealed class CollisionSystem
         {
             ballTransform.Position.Y = RectangleBottom(rectangle) + ballRadius + 0.5f;
             ball.Velocity.Y = MathF.Abs(ball.Velocity.Y);
-            scene.BallObject.Set(ballTransform);
+            scene.BallObject.Transform2D = ballTransform;
             scene.BallObject.Set(ball);
             return;
         }
@@ -130,7 +130,7 @@ internal sealed class CollisionSystem
         {
             ballTransform.Position.X = rectangle.X - ballRadius - 0.5f;
             ball.Velocity.X = -MathF.Abs(ball.Velocity.X);
-            scene.BallObject.Set(ballTransform);
+            scene.BallObject.Transform2D = ballTransform;
             scene.BallObject.Set(ball);
             return;
         }
@@ -139,7 +139,7 @@ internal sealed class CollisionSystem
         {
             ballTransform.Position.X = RectangleRight(rectangle) + ballRadius + 0.5f;
             ball.Velocity.X = MathF.Abs(ball.Velocity.X);
-            scene.BallObject.Set(ballTransform);
+            scene.BallObject.Transform2D = ballTransform;
             scene.BallObject.Set(ball);
             return;
         }
@@ -170,7 +170,7 @@ internal sealed class CollisionSystem
             ball.Velocity.X = MathF.Abs(ball.Velocity.X);
         }
 
-        scene.BallObject.Set(ballTransform);
+        scene.BallObject.Transform2D = ballTransform;
         scene.BallObject.Set(ball);
     }
 

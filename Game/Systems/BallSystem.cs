@@ -7,9 +7,9 @@ internal sealed class BallSystem
 {
     public void StickToPaddle(BreakoutScene scene)
     {
-        Transform2DComponent paddleTransform = scene.PaddleObject.Get<Transform2DComponent>();
+        Transform2D paddleTransform = scene.PaddleObject.Transform2D;
         RectangleRendererComponent paddleRenderer = scene.PaddleObject.Get<RectangleRendererComponent>();
-        Transform2DComponent ballTransform = scene.BallObject.Get<Transform2DComponent>();
+        Transform2D ballTransform = scene.BallObject.Transform2D;
         BallComponent ball = scene.BallObject.Get<BallComponent>();
         CircleRendererComponent ballRenderer = scene.BallObject.Get<CircleRendererComponent>();
 
@@ -19,7 +19,7 @@ internal sealed class BallSystem
         ball.PreviousPosition = ballTransform.Position;
         ball.Velocity = Vector2.Zero;
 
-        scene.BallObject.Set(ballTransform);
+        scene.BallObject.Transform2D = ballTransform;
         scene.BallObject.Set(ball);
     }
 
@@ -34,13 +34,13 @@ internal sealed class BallSystem
 
     public void Update(BreakoutScene scene, float deltaTime)
     {
-        Transform2DComponent transform = scene.BallObject.Get<Transform2DComponent>();
+        Transform2D transform = scene.BallObject.Transform2D;
         BallComponent ball = scene.BallObject.Get<BallComponent>();
 
         ball.PreviousPosition = transform.Position;
         transform.Position += ball.Velocity * deltaTime;
 
-        scene.BallObject.Set(transform);
+        scene.BallObject.Transform2D = transform;
         scene.BallObject.Set(ball);
     }
 }

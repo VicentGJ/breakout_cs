@@ -115,7 +115,6 @@ internal sealed class BreakoutScene : IGameScene
         if (PaddleObject is null)
         {
             PaddleObject = CreateGameObject("Paddle");
-            PaddleObject.Add(Transform2DComponent.Default);
             PaddleObject.Add(new CanvasItemComponent { Visible = true, ZIndex = 20, Modulate = Color.White });
             PaddleObject.Add(new PaddleComponent { Speed = BreakoutRules.PaddleSpeed });
             PaddleObject.Add(new RectangleRendererComponent { Size = BreakoutRules.PaddleSize, FillColor = BreakoutTheme.PaddleColor });
@@ -124,7 +123,6 @@ internal sealed class BreakoutScene : IGameScene
         if (BallObject is null)
         {
             BallObject = CreateGameObject("Ball");
-            BallObject.Add(Transform2DComponent.Default);
             BallObject.Add(new CanvasItemComponent { Visible = true, ZIndex = 30, Modulate = Color.White });
             BallObject.Add(new BallComponent());
             BallObject.Add(new CircleRendererComponent { Radius = BreakoutRules.BallRadius, FillColor = BreakoutTheme.BallColor });
@@ -133,28 +131,27 @@ internal sealed class BreakoutScene : IGameScene
         PaddleObject.IsActive = true;
         BallObject.IsActive = true;
 
-        Transform2DComponent paddleTransform = PaddleObject.Get<Transform2DComponent>();
+        Transform2D paddleTransform = PaddleObject.Transform2D;
         RectangleRendererComponent paddleRenderer = PaddleObject.Get<RectangleRendererComponent>();
         paddleTransform.Position = new Vector2(Arena.X + (Arena.Width - paddleRenderer.Size.X) * 0.5f, ArenaBottom - BreakoutRules.PaddleFloorOffset);
         paddleTransform.Rotation = 0f;
         paddleTransform.Scale = Vector2.One;
-        PaddleObject.Set(paddleTransform);
+        PaddleObject.Transform2D = paddleTransform;
 
-        Transform2DComponent ballTransform = BallObject.Get<Transform2DComponent>();
+        Transform2D ballTransform = BallObject.Transform2D;
         BallComponent ball = BallObject.Get<BallComponent>();
         ballTransform.Position = Vector2.Zero;
         ballTransform.Rotation = 0f;
         ballTransform.Scale = Vector2.One;
         ball.PreviousPosition = Vector2.Zero;
         ball.Velocity = Vector2.Zero;
-        BallObject.Set(ballTransform);
+        BallObject.Transform2D = ballTransform;
         BallObject.Set(ball);
     }
 
     internal void CreateBrickObject(Vector2 position, Vector2 size, Color color, int points)
     {
         GameObject brick = CreateGameObject($"Brick-{Bricks.Count + 1}");
-        brick.Add(new Transform2DComponent { Position = position, Scale = Vector2.One });
         brick.Add(new CanvasItemComponent { Visible = true, ZIndex = 10, Modulate = Color.White });
         brick.Add(new BrickComponent { Points = points });
         brick.Add(new RectangleRendererComponent
@@ -163,6 +160,8 @@ internal sealed class BreakoutScene : IGameScene
             FillColor = color,
             StrokeColor = BreakoutTheme.BackgroundColor
         });
+
+        brick.Transform2D = new Transform2D { Position = position, Scale = Vector2.One };
 
         Bricks.Add(brick);
     }
