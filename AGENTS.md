@@ -60,20 +60,6 @@ NOT a shipped engine - expect iteration on architecture.
 - `GameApp` for main runtime wrapper
 - Folder split: `Engine/` (generic) vs `Game/` (Breakout-specific)
 
-## Folder Structure (Stable)
-
-```
-Engine/
-  Runtime/       # GameApp, FrameContext, InputState, SceneManager
-  Scene/         # GameObject, components
-  Rendering/     # RenderSystem, handlers
-Game/
-  Scenes/        # BreakoutScene
-  Systems/       # Paddle, Ball, Collision, Round
-  Content/       # Rules, Theme, LevelBuilder
-  Rendering/     # BreakoutRenderer
-```
-
 ## What May Change
 
 - Component model details
