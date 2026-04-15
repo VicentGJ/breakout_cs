@@ -12,9 +12,7 @@ Version 1 is box-only. That keeps the first physics pass small and focused. Ever
 
 This first version must support three things:
 
-- The engine must be able to test whether two boxes overlap.
-
-- The engine must be able to compute a contact description for an overlap, including the direction to push the objects apart and how deep the overlap is.
+- The engine must be able to compute a signed contact result for two boxes, where positive distance means separated, zero means touching, and negative distance means overlap.
 
 - The engine must be able to produce a correction vector so the caller can separate the objects and continue the simulation.
 
@@ -42,7 +40,7 @@ That is enough to describe the paddle, the bricks, the walls, and any simple rec
 
 `Transform2D` is core state on every `GameObject`. Physics does not replace it. Physics reads it.
 
-When the engine asks whether two objects overlap, it combines the object transform with the collider size to produce world-space box bounds. In v1 the collider stays centered on the object origin, so the transform describes where the object is and the collider describes how large the box is.
+When the engine asks for the signed distance between two objects, it combines the object transform with the collider size to produce world-space box bounds. In v1 the collider stays centered on the object origin, so the transform describes where the object is and the collider describes how large the box is.
 
 This separation matters because it keeps rendering, collision, and gameplay data independent. A visual rectangle should not be the only source of collision geometry, and a collider should not need to know how it is drawn.
 
@@ -57,31 +55,25 @@ struct BoxCollider
 {
     Vector2 Size;
 
-    Rectangle GetWorldBounds(in Transform2D transform);
-    bool Intersects(in BoxCollider other, in Transform2D selfTransform, in Transform2D otherTransform);
     Collision GetCollision(in BoxCollider other, in Transform2D selfTransform, in Transform2D otherTransform);
 }
 
 struct Collision
 {
     Vector2 Normal;
-    float Depth;
+    float Distance;
     Vector2 Point;
 }
 
-static class Physics2D
+static class CollisionHelper
 {
     Vector2 GetCorrection(in Collision collision);
 }
 ```
 
-`GetWorldBounds` takes the collider plus the object transform and returns the collider in world space.
+`GetCollision` takes two colliders and their transforms and returns a signed `Collision` result. `Distance > 0` means the boxes are separated, `Distance == 0` means they are touching, and `Distance < 0` means they overlap.
 
-`Intersects` takes two colliders and their transforms and returns a boolean overlap answer.
-
-`GetCollision` takes the same inputs and returns a `Collision` only when the boxes overlap. If the boxes do not overlap, it should return `default` and the caller should treat that as “no collision”.
-
-`Physics2D.GetCorrection` turns a valid `Collision` into the correction vector the caller applies to separate the objects. For a default or empty collision, it should return `Vector2.Zero`.
+`CollisionHelper.GetCorrection` turns a signed `Collision` into the correction vector the caller applies to separate the objects. For a zero or positive distance result, it should return `Vector2.Zero`.
 
 This keeps the public API small and readable. Game code talks to colliders directly instead of building an intermediate query object first.
 
@@ -91,12 +83,20 @@ Example flow:
 var playerBox = player.GetComponent<BoxCollider>();
 var wallBox = wall.GetComponent<BoxCollider>();
 
-if (playerBox.Intersects(wallBox, player.Transform2D, wall.Transform2D))
-{
-    var collision = playerBox.GetCollision(wallBox, player.Transform2D, wall.Transform2D);
-    var correction = Physics2D.GetCorrection(collision);
+var collision = playerBox.GetCollision(wallBox, player.Transform2D, wall.Transform2D);
+var correction = CollisionHelper.GetCorrection(collision);
 
-    player.Transform2D.Position -= correction;
+player.Transform2D.Position -= correction;
+```
+
+Example flow with the signed result:
+
+```csharp
+var collision = playerBox.GetCollision(wallBox, player.Transform2D, wall.Transform2D);
+
+if (collision.Distance < 0)
+{
+    player.Transform2D.Position -= CollisionHelper.GetCorrection(collision);
 }
 ```
 
@@ -105,10 +105,10 @@ if (playerBox.Intersects(wallBox, player.Transform2D, wall.Transform2D))
 The `Collision` result should carry the minimum information needed to separate objects and make gameplay decisions. It should not own behavior or physics helpers.
 
 - `Normal`: the direction from the first collider toward the second.
-- `Depth`: how deeply the boxes overlap.
+- `Distance`: the signed separation distance. Positive means separated, zero means touching, negative means overlapping.
 - `Point`: an approximate contact point, if useful.
 
-For v1, `Normal` and `Depth` are the important fields. `Point` can be approximate or omitted from gameplay use if it turns out not to be needed immediately.
+For v1, all three fields are part of the public result. `Point` is included for completeness even if the current gameplay code does not use it yet.
 
 ## Engine Responsibilities
 
@@ -124,7 +124,7 @@ The module should live under `Engine/Physics/` and stay small enough to reason a
 
 - `BoxCollider.cs`: the component type and the public collider-facing methods
 - `Collision.cs`: collision result data
-- `Physics2D.cs`: helper math such as correction vectors
+- `CollisionHelper.cs`: helper math such as correction vectors
 - `BoxCollision.cs`: internal box-box intersection and contact math
 
 That layout keeps shape data, math, and query code separated without over-engineering the first version.
