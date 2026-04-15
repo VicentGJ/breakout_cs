@@ -1,6 +1,6 @@
 namespace Breakout;
 
-internal static class Time
+static class Time
 {
     public static float DeltaTime { get; internal set; }
 

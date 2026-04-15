@@ -1,6 +1,6 @@
 namespace Breakout;
 
-internal sealed class RoundSystem
+sealed class RoundSystem
 {
     private readonly LevelBuilder _levelBuilder;
     private readonly BallSystem _ballSystem;

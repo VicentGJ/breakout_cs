@@ -3,7 +3,7 @@ using Raylib_cs;
 
 namespace Breakout;
 
-internal struct CircleRendererComponent : IComponent
+struct CircleRendererComponent : IComponent
 {
     public float Radius;
     public Vector2 Offset = Vector2.Zero;

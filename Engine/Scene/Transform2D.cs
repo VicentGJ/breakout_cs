@@ -2,7 +2,7 @@ using System.Numerics;
 
 namespace Breakout;
 
-internal struct Transform2D
+struct Transform2D
 {
     public Vector2 Position;
     public float Rotation;

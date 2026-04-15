@@ -1,6 +1,6 @@
 namespace Breakout;
 
-internal struct BrickComponent : IComponent
+struct BrickComponent : IComponent
 {
     public int Points;
 }

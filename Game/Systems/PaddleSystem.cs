@@ -1,6 +1,6 @@
 namespace Breakout;
 
-internal sealed class PaddleSystem
+sealed class PaddleSystem
 {
     public void Update(BreakoutScene scene, InputState input, float deltaTime)
     {

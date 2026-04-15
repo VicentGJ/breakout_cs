@@ -3,7 +3,7 @@ using Raylib_cs;
 
 namespace Breakout;
 
-internal sealed class BreakoutScene : IGameScene
+sealed class BreakoutScene : IGameScene
 {
     private readonly BreakoutRenderer _renderer;
     private readonly PaddleSystem _paddleSystem;

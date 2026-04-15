@@ -3,7 +3,7 @@ using Raylib_cs;
 
 namespace Breakout;
 
-internal sealed class CollisionSystem
+sealed class CollisionSystem
 {
     public void Resolve(BreakoutScene scene)
     {

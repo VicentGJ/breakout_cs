@@ -2,7 +2,7 @@ using System.Numerics;
 
 namespace Breakout;
 
-internal sealed class LevelBuilder
+sealed class LevelBuilder
 {
     public void Build(BreakoutScene scene)
     {

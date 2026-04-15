@@ -2,7 +2,7 @@ using Raylib_cs;
 
 namespace Breakout;
 
-internal sealed class BreakoutRenderer
+sealed class BreakoutRenderer
 {
     private readonly BreakoutScene _scene;
     private readonly RenderSystem _renderSystem;

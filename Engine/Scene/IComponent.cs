@@ -1,5 +1,5 @@
 namespace Breakout;
 
-internal interface IComponent
+interface IComponent
 {
 }

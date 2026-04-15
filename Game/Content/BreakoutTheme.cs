@@ -2,7 +2,7 @@ using Raylib_cs;
 
 namespace Breakout;
 
-internal static class BreakoutTheme
+static class BreakoutTheme
 {
     public static readonly Color BackgroundColor = new(18, 22, 33, 255);
     public static readonly Color ArenaColor = new(25, 32, 48, 255);

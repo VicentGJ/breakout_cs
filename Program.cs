@@ -1,6 +1,6 @@
 namespace Breakout;
 
-internal static class Program
+static class Program
 {
     private const int WindowWidth = 960;
     private const int WindowHeight = 720;

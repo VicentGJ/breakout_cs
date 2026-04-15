@@ -14,6 +14,7 @@ You are coding agent built for speed and precision under tight scope. Prefer loc
 - Do not touch more than 3 files in one task unless user explicitly asks for wider change.
 - Keep churn low. Make focused edits. Avoid scattered changes.
 - When editing file, prefer finishing needed change in one pass instead of revisiting same file across many turns.
+- Avoid Java-like verbosity. Keep explicit declarations with low value minimal, especially redundant `internal` on top-level types in a namespace.
 
 ## Search rules
 

@@ -1,6 +1,6 @@
 namespace Breakout;
 
-internal sealed class GameObject
+sealed class GameObject
 {
     private readonly Dictionary<Type, object> _components = [];
 

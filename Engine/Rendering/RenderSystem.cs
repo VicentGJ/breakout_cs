@@ -3,7 +3,7 @@ using Raylib_cs;
 
 namespace Breakout;
 
-internal sealed class RenderSystem
+sealed class RenderSystem
 {
     private readonly IRenderComponentHandler[] _handlers =
     [
@@ -48,7 +48,7 @@ internal sealed class RenderSystem
     private readonly record struct RenderEntry(GameObject GameObject, Transform2D Transform, CanvasItemComponent CanvasItem, IRenderComponentHandler Handler);
 }
 
-internal interface IRenderComponentHandler
+interface IRenderComponentHandler
 {
     bool CanDraw(GameObject gameObject);
 
@@ -79,7 +79,7 @@ internal abstract class RenderComponentHandler<T> : IRenderComponentHandler wher
     }
 }
 
-internal sealed class RectangleRenderHandler : RenderComponentHandler<RectangleRendererComponent>
+sealed class RectangleRenderHandler : RenderComponentHandler<RectangleRendererComponent>
 {
     protected override void Draw(GameObject gameObject, in Transform2D transform, in CanvasItemComponent canvasItem, in RectangleRendererComponent renderer)
     {
@@ -97,7 +97,7 @@ internal sealed class RectangleRenderHandler : RenderComponentHandler<RectangleR
     }
 }
 
-internal sealed class CircleRenderHandler : RenderComponentHandler<CircleRendererComponent>
+sealed class CircleRenderHandler : RenderComponentHandler<CircleRendererComponent>
 {
     protected override void Draw(GameObject gameObject, in Transform2D transform, in CanvasItemComponent canvasItem, in CircleRendererComponent renderer)
     {
@@ -115,7 +115,7 @@ internal sealed class CircleRenderHandler : RenderComponentHandler<CircleRendere
     }
 }
 
-internal sealed class TextRenderHandler : RenderComponentHandler<TextRendererComponent>
+sealed class TextRenderHandler : RenderComponentHandler<TextRendererComponent>
 {
     protected override void Draw(GameObject gameObject, in Transform2D transform, in CanvasItemComponent canvasItem, in TextRendererComponent renderer)
     {

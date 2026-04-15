@@ -2,7 +2,7 @@ using System.Numerics;
 
 namespace Breakout;
 
-internal static class BreakoutRules
+static class BreakoutRules
 {
     public const int BrickColumns = 10;
     public const int BrickRows = 6;

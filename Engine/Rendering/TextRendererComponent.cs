@@ -3,7 +3,7 @@ using Raylib_cs;
 
 namespace Breakout;
 
-internal struct TextRendererComponent : IComponent
+struct TextRendererComponent : IComponent
 {
     public string Text = string.Empty;
     public int FontSize = 16;

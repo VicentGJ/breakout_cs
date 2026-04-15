@@ -1,12 +1,12 @@
 namespace Breakout;
 
-internal interface IGameScene
+interface IGameScene
 {
     void Update();
     void Draw();
 }
 
-internal sealed class SceneManager
+sealed class SceneManager
 {
     private IGameScene _scene;
 

@@ -2,7 +2,7 @@ using Raylib_cs;
 
 namespace Breakout;
 
-internal sealed class GameApp
+sealed class GameApp
 {
     private readonly int _windowWidth;
     private readonly int _windowHeight;

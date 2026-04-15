@@ -3,7 +3,7 @@ using Raylib_cs;
 
 namespace Breakout;
 
-internal static class GameObjectGeometry
+static class GameObjectGeometry
 {
     public static Rectangle GetRectangle(GameObject gameObject)
     {

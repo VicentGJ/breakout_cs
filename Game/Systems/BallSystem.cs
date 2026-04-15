@@ -3,7 +3,7 @@ using Raylib_cs;
 
 namespace Breakout;
 
-internal sealed class BallSystem
+sealed class BallSystem
 {
     public void StickToPaddle(BreakoutScene scene)
     {
