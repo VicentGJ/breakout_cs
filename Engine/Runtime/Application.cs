@@ -2,19 +2,19 @@ using Raylib_cs;
 
 namespace Breakout;
 
-sealed class GameApp
+sealed class Application
 {
     private readonly int _windowWidth;
     private readonly int _windowHeight;
     private readonly string _title;
-    private readonly SceneManager _sceneManager;
+    private readonly Runtime _runtime;
 
-    public GameApp(int windowWidth, int windowHeight, string title, IGameScene initialScene)
+    public Application(int windowWidth, int windowHeight, string title, Runtime runtime)
     {
         _windowWidth = windowWidth;
         _windowHeight = windowHeight;
         _title = title;
-        _sceneManager = new SceneManager(initialScene);
+        _runtime = runtime;
     }
 
     public void Run()
@@ -24,13 +24,12 @@ sealed class GameApp
 
         while (!Raylib.WindowShouldClose())
         {
-            Time.UnscaledDeltaTime = Raylib.GetFrameTime();
-            Time.DeltaTime = Time.UnscaledDeltaTime * Time.TimeScale;
-
-            _sceneManager.Update();
+            _runtime.BeginFrame(Raylib.GetFrameTime());
+            _runtime.Update();
+            _runtime.PhysicsUpdate();
 
             Raylib.BeginDrawing();
-            _sceneManager.Draw();
+            _runtime.Draw();
             Raylib.EndDrawing();
         }
 

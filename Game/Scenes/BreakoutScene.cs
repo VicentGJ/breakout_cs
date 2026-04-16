@@ -3,27 +3,13 @@ using Raylib_cs;
 
 namespace Breakout;
 
-sealed class BreakoutScene : IGameScene
+sealed class BreakoutScene : Scene
 {
-    private readonly BreakoutRenderer _renderer;
-    private readonly PaddleSystem _paddleSystem;
-    private readonly BallSystem _ballSystem;
-    private readonly CollisionSystem _collisionSystem;
-    private readonly RoundSystem _roundSystem;
-    private int _nextGameObjectId = 1;
-
     public BreakoutScene(int screenWidth, int screenHeight)
     {
         ScreenWidth = screenWidth;
         ScreenHeight = screenHeight;
         Arena = new Rectangle(32f, BreakoutRules.HudHeight + 8f, screenWidth - 64f, screenHeight - BreakoutRules.HudHeight - 40f);
-        _renderer = new BreakoutRenderer(this);
-        _paddleSystem = new PaddleSystem();
-        _ballSystem = new BallSystem();
-        _collisionSystem = new CollisionSystem();
-        _roundSystem = new RoundSystem(new LevelBuilder(), _ballSystem);
-
-        _roundSystem.StartNewGame(this);
     }
 
     internal int ScreenWidth { get; }
@@ -40,8 +26,6 @@ sealed class BreakoutScene : IGameScene
 
     internal int BricksRemaining { get; set; }
 
-    internal List<GameObject> Objects { get; } = [];
-
     internal List<GameObject> Bricks { get; } = [];
 
     internal GameObject PaddleObject { get; private set; } = null!;
@@ -52,52 +36,8 @@ sealed class BreakoutScene : IGameScene
 
     internal float ArenaBottom => Arena.Y + Arena.Height;
 
-    public void Update()
+    public override void Update(Runtime runtime, InputState input)
     {
-        if (Phase is GamePhase.Serving or GamePhase.Playing)
-        {
-            _paddleSystem.Update(this, InputState.Poll(), Time.DeltaTime);
-        }
-
-        switch (Phase)
-        {
-            case GamePhase.Serving:
-                _ballSystem.StickToPaddle(this);
-
-                if (InputState.Poll().LaunchPressed)
-                {
-                    _ballSystem.Launch(this);
-                }
-
-                break;
-
-            case GamePhase.Playing:
-                _ballSystem.Update(this, Time.DeltaTime);
-                _collisionSystem.Resolve(this);
-                _roundSystem.HandleBallOutOfBounds(this);
-                break;
-
-            case GamePhase.Won:
-            case GamePhase.Lost:
-                if (InputState.Poll().ConfirmPressed)
-                {
-                    _roundSystem.StartNewGame(this);
-                }
-
-                break;
-        }
-    }
-
-    public void Draw()
-    {
-        _renderer.Draw();
-    }
-
-    internal GameObject CreateGameObject(string name)
-    {
-        GameObject gameObject = new(_nextGameObjectId++, name);
-        Objects.Add(gameObject);
-        return gameObject;
     }
 
     internal void ClearBricks()
