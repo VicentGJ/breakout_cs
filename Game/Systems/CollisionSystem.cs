@@ -1,5 +1,4 @@
 using System.Numerics;
-using Raylib_cs;
 
 namespace Breakout;
 
@@ -16,22 +15,23 @@ sealed class CollisionSystem
     {
         Transform2D ballTransform = scene.BallObject.Transform2D;
         BallComponent ball = scene.BallObject.Get<BallComponent>();
-        float ballRadius = GameObjectGeometry.GetCircleRadius(scene.BallObject);
+        BoxColliderComponent ballCollider = scene.BallObject.Get<BoxColliderComponent>();
+        Vector2 ballHalfSize = Vector2.Abs(ballCollider.Size * ballTransform.Scale) * 0.5f;
 
-        if (ballTransform.Position.X - ballRadius < scene.Arena.X)
+        if (ballTransform.Position.X - ballHalfSize.X < scene.Arena.X)
         {
-            ballTransform.Position.X = scene.Arena.X + ballRadius;
+            ballTransform.Position.X = scene.Arena.X + ballHalfSize.X;
             ball.Velocity.X = MathF.Abs(ball.Velocity.X);
         }
-        else if (ballTransform.Position.X + ballRadius > scene.ArenaRight)
+        else if (ballTransform.Position.X + ballHalfSize.X > scene.ArenaRight)
         {
-            ballTransform.Position.X = scene.ArenaRight - ballRadius;
+            ballTransform.Position.X = scene.ArenaRight - ballHalfSize.X;
             ball.Velocity.X = -MathF.Abs(ball.Velocity.X);
         }
 
-        if (ballTransform.Position.Y - ballRadius < scene.Arena.Y)
+        if (ballTransform.Position.Y - ballHalfSize.Y < scene.Arena.Y)
         {
-            ballTransform.Position.Y = scene.Arena.Y + ballRadius;
+            ballTransform.Position.Y = scene.Arena.Y + ballHalfSize.Y;
             ball.Velocity.Y = MathF.Abs(ball.Velocity.Y);
         }
 
@@ -41,21 +41,23 @@ sealed class CollisionSystem
 
     private static void ResolvePaddleCollision(BreakoutScene scene)
     {
-        Rectangle paddleBounds = GameObjectGeometry.GetRectangle(scene.PaddleObject);
         Transform2D ballTransform = scene.BallObject.Transform2D;
         BallComponent ball = scene.BallObject.Get<BallComponent>();
-        float ballRadius = GameObjectGeometry.GetCircleRadius(scene.BallObject);
-        float paddleCenterX = paddleBounds.X + paddleBounds.Width * 0.5f;
+        BoxColliderComponent ballCollider = scene.BallObject.Get<BoxColliderComponent>();
+        BoxColliderComponent paddleCollider = scene.PaddleObject.Get<BoxColliderComponent>();
+        Transform2D paddleTransform = scene.PaddleObject.Transform2D;
+        Collision collision = ballCollider.GetCollision(paddleCollider, ballTransform, paddleTransform);
 
-        if (ball.Velocity.Y <= 0f || !Raylib.CheckCollisionCircleRec(ballTransform.Position, ballRadius, paddleBounds))
+        if (ball.Velocity.Y <= 0f || collision.Distance >= 0f)
         {
             return;
         }
 
-        float hitOffset = (ballTransform.Position.X - paddleCenterX) / (paddleBounds.Width * 0.5f);
+        float hitOffset = (ballTransform.Position.X - paddleTransform.Position.X) / (paddleCollider.Size.X * 0.5f);
         float bounceX = Math.Clamp(hitOffset, -1f, 1f) * 0.9f;
 
-        ballTransform.Position.Y = paddleBounds.Y - ballRadius - 0.5f;
+        ballTransform.Position += CollisionHelper.GetCorrection(collision);
+        ballTransform.Position.Y -= 0.5f;
         ball.Velocity = Vector2.Normalize(new Vector2(bounceX, -1f)) * BreakoutRules.BallSpeed;
 
         scene.BallObject.Transform2D = ballTransform;
@@ -66,7 +68,7 @@ sealed class CollisionSystem
     {
         Transform2D ballTransform = scene.BallObject.Transform2D;
         BallComponent ball = scene.BallObject.Get<BallComponent>();
-        float ballRadius = GameObjectGeometry.GetCircleRadius(scene.BallObject);
+        BoxColliderComponent ballCollider = scene.BallObject.Get<BoxColliderComponent>();
 
         foreach (GameObject brickObject in scene.Bricks)
         {
@@ -75,9 +77,10 @@ sealed class CollisionSystem
                 continue;
             }
 
-            Rectangle brickBounds = GameObjectGeometry.GetRectangle(brickObject);
+            BoxColliderComponent brickCollider = brickObject.Get<BoxColliderComponent>();
+            Collision collision = ballCollider.GetCollision(brickCollider, ballTransform, brickObject.Transform2D);
 
-            if (!Raylib.CheckCollisionCircleRec(ballTransform.Position, ballRadius, brickBounds))
+            if (collision.Distance >= 0f)
             {
                 continue;
             }
@@ -91,7 +94,7 @@ sealed class CollisionSystem
             scene.BricksRemaining--;
             scene.Score += brick.Points;
 
-            BounceBallFromRectangle(scene, brickBounds);
+            BounceBall(scene, collision);
 
             if (scene.BricksRemaining == 0)
             {
@@ -102,79 +105,23 @@ sealed class CollisionSystem
         }
     }
 
-    private static void BounceBallFromRectangle(BreakoutScene scene, Rectangle rectangle)
+    private static void BounceBall(BreakoutScene scene, Collision collision)
     {
         Transform2D ballTransform = scene.BallObject.Transform2D;
         BallComponent ball = scene.BallObject.Get<BallComponent>();
-        float ballRadius = GameObjectGeometry.GetCircleRadius(scene.BallObject);
+        ballTransform.Position += CollisionHelper.GetCorrection(collision);
+        ballTransform.Position -= collision.Normal * 0.5f;
 
-        if (ball.PreviousPosition.Y + ballRadius <= rectangle.Y)
+        if (collision.Normal.X != 0f)
         {
-            ballTransform.Position.Y = rectangle.Y - ballRadius - 0.5f;
-            ball.Velocity.Y = -MathF.Abs(ball.Velocity.Y);
-            scene.BallObject.Transform2D = ballTransform;
-            scene.BallObject.Set(ball);
-            return;
-        }
-
-        if (ball.PreviousPosition.Y - ballRadius >= RectangleBottom(rectangle))
-        {
-            ballTransform.Position.Y = RectangleBottom(rectangle) + ballRadius + 0.5f;
-            ball.Velocity.Y = MathF.Abs(ball.Velocity.Y);
-            scene.BallObject.Transform2D = ballTransform;
-            scene.BallObject.Set(ball);
-            return;
-        }
-
-        if (ball.PreviousPosition.X + ballRadius <= rectangle.X)
-        {
-            ballTransform.Position.X = rectangle.X - ballRadius - 0.5f;
-            ball.Velocity.X = -MathF.Abs(ball.Velocity.X);
-            scene.BallObject.Transform2D = ballTransform;
-            scene.BallObject.Set(ball);
-            return;
-        }
-
-        if (ball.PreviousPosition.X - ballRadius >= RectangleRight(rectangle))
-        {
-            ballTransform.Position.X = RectangleRight(rectangle) + ballRadius + 0.5f;
-            ball.Velocity.X = MathF.Abs(ball.Velocity.X);
-            scene.BallObject.Transform2D = ballTransform;
-            scene.BallObject.Set(ball);
-            return;
-        }
-
-        float overlapTop = ballTransform.Position.Y + ballRadius - rectangle.Y;
-        float overlapBottom = RectangleBottom(rectangle) - (ballTransform.Position.Y - ballRadius);
-        float overlapLeft = ballTransform.Position.X + ballRadius - rectangle.X;
-        float overlapRight = RectangleRight(rectangle) - (ballTransform.Position.X - ballRadius);
-
-        if (overlapTop <= overlapBottom && overlapTop <= overlapLeft && overlapTop <= overlapRight)
-        {
-            ballTransform.Position.Y = rectangle.Y - ballRadius - 0.5f;
-            ball.Velocity.Y = -MathF.Abs(ball.Velocity.Y);
-        }
-        else if (overlapBottom <= overlapLeft && overlapBottom <= overlapRight)
-        {
-            ballTransform.Position.Y = RectangleBottom(rectangle) + ballRadius + 0.5f;
-            ball.Velocity.Y = MathF.Abs(ball.Velocity.Y);
-        }
-        else if (overlapLeft <= overlapRight)
-        {
-            ballTransform.Position.X = rectangle.X - ballRadius - 0.5f;
-            ball.Velocity.X = -MathF.Abs(ball.Velocity.X);
+            ball.Velocity.X = collision.Normal.X < 0f ? MathF.Abs(ball.Velocity.X) : -MathF.Abs(ball.Velocity.X);
         }
         else
         {
-            ballTransform.Position.X = RectangleRight(rectangle) + ballRadius + 0.5f;
-            ball.Velocity.X = MathF.Abs(ball.Velocity.X);
+            ball.Velocity.Y = collision.Normal.Y < 0f ? MathF.Abs(ball.Velocity.Y) : -MathF.Abs(ball.Velocity.Y);
         }
 
         scene.BallObject.Transform2D = ballTransform;
         scene.BallObject.Set(ball);
     }
-
-    private static float RectangleRight(Rectangle rectangle) => rectangle.X + rectangle.Width;
-
-    private static float RectangleBottom(Rectangle rectangle) => rectangle.Y + rectangle.Height;
 }

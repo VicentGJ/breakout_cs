@@ -92,7 +92,8 @@ sealed class RectangleRenderHandler : RenderComponentHandler<RectangleRendererCo
 
         if (renderer.StrokeColor is Color strokeColor && MathF.Abs(transform.Rotation) < 0.0001f)
         {
-            Raylib.DrawRectangleLinesEx(rectangle, 1f, Modulate(strokeColor, canvasItem.Modulate));
+            Rectangle strokeRectangle = new(rectangle.X - origin.X, rectangle.Y - origin.Y, rectangle.Width, rectangle.Height);
+            Raylib.DrawRectangleLinesEx(strokeRectangle, 1f, Modulate(strokeColor, canvasItem.Modulate));
         }
     }
 }

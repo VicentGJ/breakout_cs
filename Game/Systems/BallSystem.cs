@@ -14,8 +14,8 @@ sealed class BallSystem
         CircleRendererComponent ballRenderer = scene.BallObject.Get<CircleRendererComponent>();
 
         ballTransform.Position = new Vector2(
-            paddleTransform.Position.X + paddleRenderer.Size.X * 0.5f,
-            paddleTransform.Position.Y - ballRenderer.Radius - 2f);
+            paddleTransform.Position.X,
+            paddleTransform.Position.Y - paddleRenderer.Size.Y * 0.5f - ballRenderer.Radius - 2f);
         ball.PreviousPosition = ballTransform.Position;
         ball.Velocity = Vector2.Zero;
 

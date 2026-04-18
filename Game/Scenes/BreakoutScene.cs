@@ -57,7 +57,8 @@ sealed class BreakoutScene : Scene
             PaddleObject = CreateGameObject("Paddle");
             PaddleObject.Add(new CanvasItemComponent { Visible = true, ZIndex = 20, Modulate = Color.White });
             PaddleObject.Add(new PaddleComponent { Speed = BreakoutRules.PaddleSpeed });
-            PaddleObject.Add(new RectangleRendererComponent { Size = BreakoutRules.PaddleSize, FillColor = BreakoutTheme.PaddleColor });
+            PaddleObject.Add(new RectangleRendererComponent { Size = BreakoutRules.PaddleSize, Origin = BreakoutRules.PaddleSize * 0.5f, FillColor = BreakoutTheme.PaddleColor });
+            PaddleObject.Add(new BoxColliderComponent { Size = BreakoutRules.PaddleSize });
         }
 
         if (BallObject is null)
@@ -66,14 +67,14 @@ sealed class BreakoutScene : Scene
             BallObject.Add(new CanvasItemComponent { Visible = true, ZIndex = 30, Modulate = Color.White });
             BallObject.Add(new BallComponent());
             BallObject.Add(new CircleRendererComponent { Radius = BreakoutRules.BallRadius, FillColor = BreakoutTheme.BallColor });
+            BallObject.Add(new BoxColliderComponent { Size = new Vector2(BreakoutRules.BallRadius * 2f) });
         }
 
         PaddleObject.IsActive = true;
         BallObject.IsActive = true;
 
         Transform2D paddleTransform = PaddleObject.Transform2D;
-        RectangleRendererComponent paddleRenderer = PaddleObject.Get<RectangleRendererComponent>();
-        paddleTransform.Position = new Vector2(Arena.X + (Arena.Width - paddleRenderer.Size.X) * 0.5f, ArenaBottom - BreakoutRules.PaddleFloorOffset);
+        paddleTransform.Position = new Vector2(Arena.X + Arena.Width * 0.5f, ArenaBottom - BreakoutRules.PaddleFloorOffset + BreakoutRules.PaddleSize.Y * 0.5f);
         paddleTransform.Rotation = 0f;
         paddleTransform.Scale = Vector2.One;
         PaddleObject.Transform2D = paddleTransform;
@@ -97,11 +98,13 @@ sealed class BreakoutScene : Scene
         brick.Add(new RectangleRendererComponent
         {
             Size = size,
+            Origin = size * 0.5f,
             FillColor = color,
             StrokeColor = BreakoutTheme.BackgroundColor
         });
+        brick.Add(new BoxColliderComponent { Size = size });
 
-        brick.Transform2D = new Transform2D { Position = position, Scale = Vector2.One };
+        brick.Transform2D = new Transform2D { Position = position + size * 0.5f, Scale = Vector2.One };
 
         Bricks.Add(brick);
     }

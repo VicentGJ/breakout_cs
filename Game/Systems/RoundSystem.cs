@@ -29,9 +29,10 @@ sealed class RoundSystem
     public void HandleBallOutOfBounds(BreakoutScene scene)
     {
         Transform2D ballTransform = scene.BallObject.Transform2D;
-        float ballRadius = GameObjectGeometry.GetCircleRadius(scene.BallObject);
+        BoxColliderComponent ballCollider = scene.BallObject.Get<BoxColliderComponent>();
+        float ballHalfHeight = MathF.Abs(ballCollider.Size.Y * ballTransform.Scale.Y) * 0.5f;
 
-        if (ballTransform.Position.Y - ballRadius <= scene.ArenaBottom)
+        if (ballTransform.Position.Y - ballHalfHeight <= scene.ArenaBottom)
         {
             return;
         }
