@@ -14,7 +14,7 @@ You are coding agent built for speed and precision under tight scope. Prefer loc
 - Do not touch more than 3 files in one task unless user explicitly asks for wider change.
 - Keep churn low. Make focused edits. Avoid scattered changes.
 - When editing file, prefer finishing needed change in one pass instead of revisiting same file across many turns.
-- Avoid Java-like verbosity. Keep explicit declarations with low value minimal, especially redundant `internal` on top-level types in a namespace.
+- Avoid Java-like verbosity. Remove modifiers that only restate facts already enforced by scope or structure, such as `sealed` on private nested helpers or redundant `internal` on namespace-level types. Keep modifiers when they express a real design boundary, framework requirement, or useful constraint.
 
 ## Search rules
 

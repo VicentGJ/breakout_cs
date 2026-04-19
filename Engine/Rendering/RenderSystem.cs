@@ -20,7 +20,7 @@ sealed class RenderSystem
 
         foreach (GameObject gameObject in objects)
         {
-            if (!gameObject.IsActive || !gameObject.TryGet(out CanvasItemComponent canvasItem) || !canvasItem.Visible)
+            if (!gameObject.Active || !gameObject.TryGet(out CanvasItemComponent canvasItem) || !canvasItem.Visible)
             {
                 continue;
             }

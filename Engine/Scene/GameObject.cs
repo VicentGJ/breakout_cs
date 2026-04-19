@@ -3,22 +3,25 @@ namespace Breakout;
 sealed class GameObject
 {
     private readonly Dictionary<Type, object> _components = [];
+    private readonly List<BehaviorComponent> _behaviors = [];
+    private Scene? _scene;
 
-    public GameObject(int id, string name)
+    public GameObject(string name)
     {
-        Id = id;
         Name = name;
-        IsActive = true;
+        Active = true;
         Transform2D = global::Breakout.Transform2D.Default;
     }
 
-    public int Id { get; }
+    public int Id { get; private set; }
 
     public string Name { get; }
 
-    public bool IsActive { get; set; }
+    public bool Active { get; set; }
 
     public Transform2D Transform2D { get; set; }
+
+    public IReadOnlyList<BehaviorComponent> Behaviors => _behaviors;
 
     public void Add<T>(T component) where T : struct, IComponent
     {
@@ -55,5 +58,67 @@ sealed class GameObject
 
         component = default;
         return false;
+    }
+
+    public T AddBehavior<T>(T behavior) where T : BehaviorComponent
+    {
+        _behaviors.Add(behavior);
+
+        if (_scene is not null)
+        {
+            behavior.Attach(this, _scene);
+        }
+
+        return behavior;
+    }
+
+    public T GetBehavior<T>() where T : BehaviorComponent
+    {
+        if (TryGetBehavior(out T? behavior) && behavior is not null)
+        {
+            return behavior;
+        }
+
+        throw new InvalidOperationException($"GameObject '{Name}' missing behavior '{typeof(T).Name}'.");
+    }
+
+    public bool TryGetBehavior<T>(out T? behavior) where T : BehaviorComponent
+    {
+        foreach (BehaviorComponent candidate in _behaviors)
+        {
+            if (candidate is T match)
+            {
+                behavior = match;
+                return true;
+            }
+        }
+
+        behavior = null;
+        return false;
+    }
+
+    internal void AttachToScene(Scene scene)
+    {
+        _scene = scene;
+
+        foreach (BehaviorComponent behavior in _behaviors)
+        {
+            behavior.Attach(this, scene);
+        }
+    }
+
+    internal void DetachFromScene()
+    {
+        foreach (BehaviorComponent behavior in _behaviors)
+        {
+            behavior.Detach();
+        }
+
+        _scene = null;
+    }
+
+    internal void AssignId(int id)
+    {
+        Id = id;
     }
 }

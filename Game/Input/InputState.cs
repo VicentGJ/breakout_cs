@@ -2,7 +2,7 @@ using Raylib_cs;
 
 namespace Breakout;
 
-internal readonly record struct InputState(bool MoveLeft, bool MoveRight, bool LaunchPressed, bool ConfirmPressed)
+readonly record struct InputState(bool MoveLeft, bool MoveRight, bool LaunchPressed, bool ConfirmPressed)
 {
     public float HorizontalAxis
     {
