@@ -18,7 +18,7 @@ sealed class RoundBehavior : BehaviorComponent
         _brickDestroyedSubscription?.Dispose();
     }
 
-    public override void Start()
+    protected override void OnStart()
     {
         StartNewGame();
     }

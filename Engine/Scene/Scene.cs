@@ -79,7 +79,7 @@ abstract class Scene
                     continue;
                 }
 
-                behavior.StartIfNeeded();
+                behavior.Start();
 
                 if (physicsPhase)
                 {

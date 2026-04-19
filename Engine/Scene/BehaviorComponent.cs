@@ -25,7 +25,7 @@ abstract class BehaviorComponent : IComponent
         Scene = null!;
     }
 
-    internal void StartIfNeeded()
+    internal void Start()
     {
         if (_started)
         {
@@ -33,7 +33,7 @@ abstract class BehaviorComponent : IComponent
         }
 
         _started = true;
-        Start();
+        OnStart();
     }
 
     protected virtual void OnAttach()
@@ -44,7 +44,7 @@ abstract class BehaviorComponent : IComponent
     {
     }
 
-    public virtual void Start()
+    protected virtual void OnStart()
     {
     }
 
