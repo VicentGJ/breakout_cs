@@ -1,6 +1,6 @@
 namespace Breakout;
 
-internal enum GamePhase
+enum GamePhase
 {
     Serving,
     Playing,

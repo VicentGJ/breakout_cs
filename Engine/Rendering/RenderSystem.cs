@@ -55,7 +55,7 @@ interface IRenderComponentHandler
     void Draw(GameObject gameObject, in Transform2D transform, in CanvasItemComponent canvasItem);
 }
 
-internal abstract class RenderComponentHandler<T> : IRenderComponentHandler where T : struct, IComponent
+abstract class RenderComponentHandler<T> : IRenderComponentHandler where T : struct, IComponent
 {
     public bool CanDraw(GameObject gameObject)
     {

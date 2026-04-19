@@ -9,17 +9,15 @@ sealed class GameObject
     public GameObject(string name)
     {
         Name = name;
-        Active = true;
-        Transform2D = global::Breakout.Transform2D.Default;
     }
 
     public int Id { get; private set; }
 
     public string Name { get; }
 
-    public bool Active { get; set; }
+    public bool Active { get; set; } = true;
 
-    public Transform2D Transform2D { get; set; }
+    public Transform2D Transform2D { get; set; } = global::Breakout.Transform2D.Default;
 
     public IReadOnlyList<BehaviorComponent> Behaviors => _behaviors;
 

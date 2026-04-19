@@ -4,12 +4,7 @@ namespace Breakout;
 
 sealed class BreakoutRenderer
 {
-    private readonly RenderSystem _renderSystem;
-
-    public BreakoutRenderer()
-    {
-        _renderSystem = new RenderSystem();
-    }
+    private readonly RenderSystem _renderSystem = new();
 
     public void Draw(BreakoutScene scene)
     {
