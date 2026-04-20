@@ -16,7 +16,7 @@ Execution starts in `Program.cs`, which creates a `BreakoutScene` with the windo
 
 `Runtime` owns `RuntimeTime` and the active scene. Each frame it updates time, calls the scene hook, dispatches behavior `Update`, calls the scene physics hook, dispatches behavior `PhysicsUpdate`, and then asks the scene to draw. Runtime does not poll Breakout input, reset rounds, handle collisions, score bricks, or inspect game phases. Runtime-adjacent infrastructure such as `EventBus` also lives under `Engine/Runtime`.
 
-`BreakoutScene` polls input in its scene update hook, draws through `BreakoutRenderer`, and exposes Breakout state used by behaviors. Gameplay phase gates now live inside behavior components.
+`BreakoutScene` polls input in its scene update hook, clears the frame background, invokes the generic `RenderSystem`, and exposes Breakout state used by behaviors. Gameplay phase gates now live inside behavior components.
 
 ## Scene, Object, And Behavior Model
 
@@ -53,7 +53,7 @@ Rendering remains component-driven. `Engine/Rendering/RenderSystem.cs` gathers v
 
 `CanvasItemComponent` gates rendering and carries modulation color. Shape-specific renderer components describe visual data. `RectangleRendererComponent`, `CircleRendererComponent`, and `TextRendererComponent` are handled by corresponding renderer handlers.
 
-`BreakoutRenderer` composes the final frame. It clears the background, draws the arena, invokes the generic render system for scene objects, draws the HUD, and shows an overlay whenever the game is not actively playing.
+Breakout presentation is modeled as scene objects. The arena, HUD text, and overlay panel/text use regular renderer components, while `PresentationBehavior` updates score, lives, text alignment, and overlay visibility from scene state.
 
 ## Physics And Collision
 
@@ -65,7 +65,7 @@ The split remains: engine physics answers geometric questions; game behavior dec
 
 ## Breakout Game Flow
 
-Game object modules live under `Game/Components/<ObjectName>/`. Each module keeps the object's data component and behavior together, such as `Game/Components/Ball/BallComponent.cs` and `Game/Components/Ball/BallBehavior.cs`.
+Game object modules live under `Game/Components/<ObjectName>/`. Each module keeps the object's data component and behavior together when both exist, such as `Game/Components/Ball/BallComponent.cs` and `Game/Components/Ball/BallBehavior.cs`.
 
 Game event definitions live under `Game/Runtime`, beside other game flow primitives rather than in a standalone events module.
 
@@ -78,6 +78,8 @@ Game event definitions live under `Game/Runtime`, beside other game flow primiti
 `BallBehavior` owns serving attachment, launch, movement, collision response, and ball-out event publishing.
 
 `BrickBehavior` owns local brick destruction and render visibility.
+
+`PresentationBehavior` owns HUD text updates, controls text alignment, and phase overlay visibility.
 
 `LevelBuilder` remains a content service. It clears old bricks, lays out the brick wall, creates brick objects, and records the remaining brick count.
 

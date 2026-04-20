@@ -5,7 +5,7 @@ namespace Breakout;
 
 sealed class BreakoutScene : Scene
 {
-    private readonly BreakoutRenderer _renderer = new();
+    private readonly RenderSystem _renderSystem = new();
 
     public BreakoutScene(int screenWidth, int screenHeight)
     {
@@ -15,6 +15,8 @@ sealed class BreakoutScene : Scene
 
         GameObject gameState = CreateGameObject("GameState");
         gameState.AddBehavior(new RoundBehavior());
+
+        CreatePresentationObjects();
     }
 
     internal int ScreenWidth { get; }
@@ -50,7 +52,8 @@ sealed class BreakoutScene : Scene
 
     public override void Draw()
     {
-        _renderer.Draw(this);
+        Raylib.ClearBackground(BreakoutTheme.BackgroundColor);
+        _renderSystem.Draw(Objects);
     }
 
     internal void ClearBricks()
@@ -123,5 +126,54 @@ sealed class BreakoutScene : Scene
         brick.Transform2D = new Transform2D { Position = position + size * 0.5f, Scale = Vector2.One };
 
         Bricks.Add(brick);
+    }
+
+    private void CreatePresentationObjects()
+    {
+        GameObject arenaObject = CreateRectangleObject(
+            "Arena",
+            new Vector2(Arena.X, Arena.Y),
+            new Vector2(Arena.Width, Arena.Height),
+            BreakoutTheme.ArenaColor,
+            zIndex: 0);
+        RectangleRendererComponent arenaRenderer = arenaObject.Get<RectangleRendererComponent>();
+        arenaRenderer.StrokeColor = BreakoutTheme.BorderColor;
+        arenaObject.Set(arenaRenderer);
+
+        GameObject scoreText = CreateTextObject("ScoreText", new Vector2(32f, 18f), 24, BreakoutTheme.TextColor, zIndex: 100);
+        GameObject livesText = CreateTextObject("LivesText", Vector2.Zero, 24, BreakoutTheme.TextColor, zIndex: 100);
+        GameObject controlsText = CreateTextObject("ControlsText", Vector2.Zero, 18, BreakoutTheme.MutedTextColor, zIndex: 100);
+
+        const int panelWidth = 420;
+        const int panelHeight = 120;
+        Vector2 panelPosition = new((ScreenWidth - panelWidth) * 0.5f, (ScreenHeight - panelHeight) * 0.5f);
+        GameObject overlayPanel = CreateRectangleObject("OverlayPanel", panelPosition, new Vector2(panelWidth, panelHeight), BreakoutTheme.OverlayColor, zIndex: 200);
+        RectangleRendererComponent overlayRenderer = overlayPanel.Get<RectangleRendererComponent>();
+        overlayRenderer.StrokeColor = BreakoutTheme.BorderColor;
+        overlayPanel.Set(overlayRenderer);
+
+        GameObject overlayTitle = CreateTextObject("OverlayTitle", new Vector2(0f, panelPosition.Y + 28f), 32, BreakoutTheme.TextColor, zIndex: 201);
+        GameObject overlaySubtitle = CreateTextObject("OverlaySubtitle", new Vector2(0f, panelPosition.Y + 72f), 20, BreakoutTheme.MutedTextColor, zIndex: 201);
+
+        GameObject presentationState = CreateGameObject("PresentationState");
+        presentationState.AddBehavior(new PresentationBehavior(scoreText, livesText, controlsText, overlayPanel, overlayTitle, overlaySubtitle));
+    }
+
+    private GameObject CreateRectangleObject(string name, Vector2 position, Vector2 size, Color fillColor, int zIndex)
+    {
+        GameObject gameObject = CreateGameObject(name);
+        gameObject.Transform2D = new Transform2D { Position = position, Scale = Vector2.One };
+        gameObject.Add(new CanvasItemComponent { Visible = true, ZIndex = zIndex, Modulate = Color.White });
+        gameObject.Add(new RectangleRendererComponent { Size = size, FillColor = fillColor });
+        return gameObject;
+    }
+
+    private GameObject CreateTextObject(string name, Vector2 position, int fontSize, Color color, int zIndex)
+    {
+        GameObject gameObject = CreateGameObject(name);
+        gameObject.Transform2D = new Transform2D { Position = position, Scale = Vector2.One };
+        gameObject.Add(new CanvasItemComponent { Visible = true, ZIndex = zIndex, Modulate = Color.White });
+        gameObject.Add(new TextRendererComponent { FontSize = fontSize, Color = color });
+        return gameObject;
     }
 }
