@@ -59,7 +59,8 @@ NOT a shipped engine - expect iteration on architecture.
 
 ## Naming Conventions (Locked)
 
-- `GameApp` for main runtime wrapper
+- `Application` for Raylib outer loop wrapper
+- `Runtime` for frame phase ordering and active scene ownership
 - Folder split: `Engine/` (generic) vs `Game/` (Breakout-specific)
 
 ## What May Change
@@ -71,7 +72,7 @@ NOT a shipped engine - expect iteration on architecture.
 
 ## What's Stable
 
-- `GameApp -> Scene -> Update/Draw` loop
+- `Program -> Application -> Runtime -> Scene -> Update/Draw` loop
 - Scene owns objects
 - Systems operate on scene
 - Generic render system + game-specific overlay pattern
