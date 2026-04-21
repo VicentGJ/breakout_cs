@@ -5,6 +5,15 @@ namespace Breakout;
 
 sealed class BallBehavior : BehaviorComponent
 {
+    private readonly GameObject _paddle;
+    private readonly IReadOnlyList<GameObject> _bricks;
+
+    public BallBehavior(GameObject paddle, IReadOnlyList<GameObject> bricks)
+    {
+        _paddle = paddle;
+        _bricks = bricks;
+    }
+
     public override void Update(float dt)
     {
         BreakoutScene scene = (BreakoutScene)Scene;
@@ -14,7 +23,7 @@ sealed class BallBehavior : BehaviorComponent
             return;
         }
 
-        StickToPaddle(scene);
+        StickToPaddle();
 
         if (scene.Input.LaunchPressed)
         {
@@ -33,15 +42,15 @@ sealed class BallBehavior : BehaviorComponent
 
         Move(dt);
         ResolveWallCollisions(scene);
-        ResolvePaddleCollision(scene);
-        ResolveBrickCollision(scene);
+        ResolvePaddleCollision();
+        ResolveBrickCollision();
         PublishOutOfBounds(scene);
     }
 
-    private void StickToPaddle(BreakoutScene scene)
+    private void StickToPaddle()
     {
-        Transform2D paddleTransform = scene.PaddleObject.Transform2D;
-        RectangleRendererComponent paddleRenderer = scene.PaddleObject.Get<RectangleRendererComponent>();
+        Transform2D paddleTransform = _paddle.Transform2D;
+        RectangleRendererComponent paddleRenderer = _paddle.Get<RectangleRendererComponent>();
         Transform2D ballTransform = Owner.Transform2D;
         BallComponent ball = Owner.Get<BallComponent>();
         CircleRendererComponent ballRenderer = Owner.Get<CircleRendererComponent>();
@@ -106,13 +115,13 @@ sealed class BallBehavior : BehaviorComponent
         Owner.Set(ball);
     }
 
-    private void ResolvePaddleCollision(BreakoutScene scene)
+    private void ResolvePaddleCollision()
     {
         Transform2D ballTransform = Owner.Transform2D;
         BallComponent ball = Owner.Get<BallComponent>();
         BoxColliderComponent ballCollider = Owner.Get<BoxColliderComponent>();
-        BoxColliderComponent paddleCollider = scene.PaddleObject.Get<BoxColliderComponent>();
-        Transform2D paddleTransform = scene.PaddleObject.Transform2D;
+        BoxColliderComponent paddleCollider = _paddle.Get<BoxColliderComponent>();
+        Transform2D paddleTransform = _paddle.Transform2D;
         Collision collision = ballCollider.GetCollision(paddleCollider, ballTransform, paddleTransform);
 
         if (ball.Velocity.Y <= 0f || collision.Distance >= 0f)
@@ -131,12 +140,12 @@ sealed class BallBehavior : BehaviorComponent
         Owner.Set(ball);
     }
 
-    private void ResolveBrickCollision(BreakoutScene scene)
+    private void ResolveBrickCollision()
     {
         Transform2D ballTransform = Owner.Transform2D;
         BoxColliderComponent ballCollider = Owner.Get<BoxColliderComponent>();
 
-        foreach (GameObject brickObject in scene.Bricks)
+        foreach (GameObject brickObject in _bricks)
         {
             if (!brickObject.Active)
             {

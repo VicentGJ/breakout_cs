@@ -4,9 +4,14 @@ namespace Breakout;
 
 sealed class LevelBuilder
 {
-    public void Build(BreakoutScene scene)
+    public int Build(BreakoutScene scene, List<GameObject> bricks)
     {
-        scene.ClearBricks();
+        foreach (GameObject brick in bricks)
+        {
+            scene.RemoveObject(brick);
+        }
+
+        bricks.Clear();
 
         const float sidePadding = 16f;
         float brickWidth = (scene.Arena.Width - sidePadding * 2f - BreakoutRules.BrickGap * (BreakoutRules.BrickColumns - 1)) / BreakoutRules.BrickColumns;
@@ -21,14 +26,17 @@ sealed class LevelBuilder
                 float y = startY + row * (BreakoutRules.BrickHeight + BreakoutRules.BrickGap);
                 int points = (BreakoutRules.BrickRows - row) * 10;
 
-                scene.CreateBrickObject(
+                GameObject brick = BrickObject.Create(
+                    scene,
+                    bricks.Count + 1,
                     new Vector2(x, y),
                     new Vector2(brickWidth, BreakoutRules.BrickHeight),
                     BreakoutTheme.BrickColors[row],
                     points);
+                bricks.Add(brick);
             }
         }
 
-        scene.BricksRemaining = scene.Bricks.Count;
+        return bricks.Count;
     }
 }

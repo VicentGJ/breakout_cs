@@ -1,10 +1,22 @@
+using System.Numerics;
+
 namespace Breakout;
 
 sealed class RoundBehavior : BehaviorComponent
 {
     private readonly LevelBuilder _levelBuilder = new();
+    private readonly GameObject _paddle;
+    private readonly GameObject _ballObject;
+    private readonly List<GameObject> _bricks;
     private IDisposable? _ballOutOfBoundsSubscription;
     private IDisposable? _brickDestroyedSubscription;
+
+    public RoundBehavior(GameObject paddle, GameObject ballObject, List<GameObject> bricks)
+    {
+        _paddle = paddle;
+        _ballObject = ballObject;
+        _bricks = bricks;
+    }
 
     protected override void OnAttach()
     {
@@ -38,7 +50,7 @@ sealed class RoundBehavior : BehaviorComponent
         BreakoutScene scene = (BreakoutScene)Scene;
         scene.Score = 0;
         scene.Lives = BreakoutRules.StartingLives;
-        _levelBuilder.Build(scene);
+        scene.BricksRemaining = _levelBuilder.Build(scene, _bricks);
         ResetRound();
     }
 
@@ -46,8 +58,32 @@ sealed class RoundBehavior : BehaviorComponent
     {
         BreakoutScene scene = (BreakoutScene)Scene;
         scene.Phase = GamePhase.Serving;
-        scene.ResetCoreObjects();
+        ResetRoundObjects(scene);
         Scene.Events.Publish(new RoundStartedEvent());
+    }
+
+    private void ResetRoundObjects(BreakoutScene scene)
+    {
+        _paddle.Active = true;
+        _ballObject.Active = true;
+
+        Transform2D paddleTransform = _paddle.Transform2D;
+        paddleTransform.Position = new Vector2(
+            scene.Arena.X + scene.Arena.Width * 0.5f,
+            scene.ArenaBottom - BreakoutRules.PaddleFloorOffset + BreakoutRules.PaddleSize.Y * 0.5f);
+        paddleTransform.Rotation = 0f;
+        paddleTransform.Scale = Vector2.One;
+        _paddle.Transform2D = paddleTransform;
+
+        Transform2D ballTransform = _ballObject.Transform2D;
+        BallComponent ball = _ballObject.Get<BallComponent>();
+        ballTransform.Position = Vector2.Zero;
+        ballTransform.Rotation = 0f;
+        ballTransform.Scale = Vector2.One;
+        ball.PreviousPosition = Vector2.Zero;
+        ball.Velocity = Vector2.Zero;
+        _ballObject.Transform2D = ballTransform;
+        _ballObject.Set(ball);
     }
 
     private void OnBallOutOfBounds(BallOutOfBoundsEvent evt)

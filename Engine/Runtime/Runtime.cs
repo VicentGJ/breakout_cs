@@ -5,7 +5,8 @@ sealed class Runtime
     public Runtime(Scene initialScene)
     {
         Time = new RuntimeTime();
-        ActiveScene = initialScene;
+        ActiveScene = null!;
+        ChangeScene(initialScene);
     }
 
     public Scene ActiveScene { get; private set; }
@@ -38,6 +39,7 @@ sealed class Runtime
     public void ChangeScene(Scene scene)
     {
         ActiveScene = scene;
+        ActiveScene.SetupOnce();
     }
 }
 

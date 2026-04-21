@@ -4,10 +4,15 @@ abstract class Scene
 {
     private readonly List<GameObject> _objects = [];
     private int _nextGameObjectId = 1;
+    private bool _setupComplete;
 
     public EventBus Events { get; } = new();
 
     public IReadOnlyList<GameObject> Objects => _objects;
+
+    public virtual void Setup()
+    {
+    }
 
     public virtual void Update(float dt)
     {
@@ -48,6 +53,17 @@ abstract class Scene
     internal void PhysicsUpdateBehaviors(float dt)
     {
         DispatchBehaviors(dt, physicsPhase: true);
+    }
+
+    internal void SetupOnce()
+    {
+        if (_setupComplete)
+        {
+            return;
+        }
+
+        _setupComplete = true;
+        Setup();
     }
 
     protected GameObject CreateGameObject(string name)
