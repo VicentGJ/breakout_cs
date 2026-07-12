@@ -1,8 +1,8 @@
-# BehaviorComponent and Scene EventBus Spec
+# BehaviorComponent and Scene EventBus Design
 
 ## Purpose
 
-This document defines a minimal gameplay-logic model for the engine based on two additions:
+This document records the implemented minimal gameplay-logic model for the engine based on two additions:
 
 1. `BehaviorComponent`, a specialized component type for object-owned logic.
 2. A minimal typed scene-level `EventBus` for decoupled gameplay communication.
@@ -19,7 +19,7 @@ The design should satisfy a few concrete goals.
 
 Behavior should live with the object that owns it. A paddle should own paddle behavior, a ball should own ball behavior, and a brick should own brick behavior. This keeps gameplay logic close to the object it affects.
 
-The runtime should remain decoupled from concrete game logic. The runtime should know how to advance phases and dispatch behavior hooks, but it should not know about specific gameplay classes.
+`Application` should remain decoupled from concrete game logic. It advances phases and dispatches behavior hooks, but does not know about specific gameplay classes.
 
 The communication model should be singular and minimal. The engine should not implement several overlapping communication systems. The default decoupling mechanism should be one small typed event system at scene scope.
 
@@ -63,11 +63,11 @@ The design keeps the existing idea that objects own components, but it acknowled
 
 The runtime controls frame phases. The scene owns objects. Objects own components. Behavior components participate in runtime phases through engine-defined hooks.
 
-The runtime should dispatch through stable behavior contracts only. It should not depend on concrete gameplay classes such as `PaddleBehaviorComponent` or `BallBehaviorComponent`.
+`Application` should dispatch through stable behavior contracts only. It should not depend on concrete gameplay classes such as `PaddleBehavior` or `BallBehavior`.
 
 This gives the engine a simple orchestration model:
 
-`Runtime -> Scene -> GameObjects -> BehaviorComponents`
+`Application -> Scene -> GameObjects -> BehaviorComponents`
 
 That is the only execution relationship the engine needs to know about.
 
@@ -113,6 +113,8 @@ The base type should be intentionally small.
 ```csharp
 public abstract class BehaviorComponent : IComponent
 {
+    private bool _started;
+
     public GameObject Owner { get; private set; } = null!;
     public Scene Scene { get; private set; } = null!;
     public bool Enabled { get; set; } = true;
@@ -127,12 +129,24 @@ public abstract class BehaviorComponent : IComponent
     internal void Detach()
     {
         OnDetach();
+        _started = false;
     }
 
     protected virtual void OnAttach() { }
     protected virtual void OnDetach() { }
 
-    public virtual void Start() { }
+    internal void Start()
+    {
+        if (_started)
+        {
+            return;
+        }
+
+        _started = true;
+        OnStart();
+    }
+
+    protected virtual void OnStart() { }
     public virtual void Update(float dt) { }
     public virtual void PhysicsUpdate(float dt) { }
 }
@@ -154,11 +168,11 @@ A behavior becomes attached when it is added to a `GameObject` that belongs to a
 
 ### Start
 
-`Start()` should run once, after attachment, before the first normal update phase in which the behavior participates.
+The implemented protected `OnStart()` hook runs once, after attachment, before the first normal update phase in which the behavior participates.
 
 This exists to support initialization that should happen after all relevant components and initial scene relationships are in place.
 
-A behavior should never receive `Update()` or `PhysicsUpdate()` before `Start()` has run.
+A behavior should never receive `Update()` or `PhysicsUpdate()` before `OnStart()` has run.
 
 ### Update
 
@@ -481,36 +495,19 @@ public sealed class BreakoutScene : Scene
     public int Score { get; set; }
     public int Lives { get; set; }
 
-    public GameObject Paddle { get; private set; } = null!;
-    public GameObject Ball { get; private set; } = null!;
-
     public BreakoutScene(int width, int height)
     {
         Arena = new Rectangle(40, 80, width - 80, height - 160);
-
-        CreateCoreObjects();
-        CreateLevel();
     }
 
-    private void CreateCoreObjects()
+    public override void Setup()
     {
-        var gameState = new GameObject("GameState");
-        gameState.AddBehavior(new RoundBehaviorComponent());
-
-        Paddle = new GameObject("Paddle");
-        Paddle.AddBehavior(new PaddleBehaviorComponent());
-
-        Ball = new GameObject("Ball");
-        Ball.AddBehavior(new BallBehaviorComponent());
-
-        AddObject(gameState);
-        AddObject(Paddle);
-        AddObject(Ball);
-    }
-
-    private void CreateLevel()
-    {
-        // create bricks and AddObject(...)
+        GameObject gameState = GameStateObject.Create(this);
+        List<GameObject> bricks = [];
+        GameObject paddle = PaddleObject.Create(this);
+        GameObject ball = BallObject.Create(this, paddle, bricks);
+        GameStateObject.AddRoundBehavior(gameState, paddle, ball, bricks);
+        PresentationObjects.Create(this);
     }
 }
 ```
@@ -526,33 +523,33 @@ A simple scene composition for the example could look like this:
 ```text
 Scene
 ├── GameObject: GameState
-│   └── RoundBehaviorComponent
+│   └── RoundBehavior
 ├── GameObject: Paddle
-│   ├── PaddleBehaviorComponent
+│   ├── PaddleBehavior
 │   ├── RectangleRendererComponent
 │   └── BoxColliderComponent
 ├── GameObject: Ball
-│   ├── BallBehaviorComponent
+│   ├── BallBehavior
 │   ├── RectangleRendererComponent
 │   └── BoxColliderComponent
 ├── GameObject: Brick_01
-│   ├── BrickBehaviorComponent
+│   ├── BrickBehavior
 │   ├── RectangleRendererComponent
 │   └── BoxColliderComponent
 ├── GameObject: Brick_02
-│   ├── BrickBehaviorComponent
+│   ├── BrickBehavior
 │   ├── RectangleRendererComponent
 │   └── BoxColliderComponent
 └── ...
 ```
 
-In this layout, `RoundBehaviorComponent` is object-owned like any other behavior, but it is attached to a dedicated scene coordinator object such as `GameState` rather than to a visible gameplay object.
+In this layout, `RoundBehavior` is object-owned like any other behavior, but it is attached to a dedicated scene coordinator object such as `GameState` rather than to a visible gameplay object.
 
 ---
 
 ## Runtime Responsibility
 
-The runtime remains responsible for frame phase orchestration.
+`Application` remains responsible for frame phase orchestration.
 
 It should not interpret gameplay events. It should not know concrete behavior types. It should only:
 
@@ -560,7 +557,7 @@ It should not interpret gameplay events. It should not know concrete behavior ty
 - ensure behavior lifecycle is respected
 - dispatch `Start`, `Update`, and `PhysicsUpdate` where appropriate
 
-The runtime remains an orchestrator, not a gameplay participant.
+`Application` remains an orchestrator, not a gameplay participant.
 
 ---
 
@@ -624,7 +621,7 @@ public readonly record struct BallOutOfBoundsEvent(GameObject Ball) : ISceneEven
 ## Example Ball Behavior
 
 ```csharp
-public sealed class BallBehaviorComponent : BehaviorComponent
+public sealed class BallBehavior : BehaviorComponent
 {
     private BallMovementComponent _movement = default!;
 
@@ -660,7 +657,7 @@ public sealed class BallBehaviorComponent : BehaviorComponent
 ## Example Brick Behavior
 
 ```csharp
-public sealed class BrickBehaviorComponent : BehaviorComponent
+public sealed class BrickBehavior : BehaviorComponent
 {
     private BrickComponent _brick = default!;
 
@@ -682,7 +679,7 @@ public sealed class BrickBehaviorComponent : BehaviorComponent
 ## Example Round Behavior
 
 ```csharp
-public sealed class RoundBehaviorComponent : BehaviorComponent
+public sealed class RoundBehavior : BehaviorComponent
 {
     private IDisposable? _brickDestroyedSubscription;
     private IDisposable? _ballOutSubscription;
@@ -727,11 +724,11 @@ The flow is:
 
 # Part V: Migration Guidance
 
-## Migration Strategy
+## Implementation History
 
-The transition should be incremental.
+The transition was incremental.
 
-The engine does not need a large rewrite. It can introduce `BehaviorComponent` and the scene `EventBus` first, then migrate existing gameplay logic piece by piece.
+The engine introduced `BehaviorComponent` and the scene `EventBus`, then migrated gameplay logic piece by piece.
 
 The safest path is to start with the most object-local systems.
 
@@ -745,14 +742,14 @@ More shared responsibilities such as level building, rendering, or broader colli
 
 ---
 
-## Likely First Migration Targets
+## Implemented First Targets
 
-A reasonable first pass would be:
+The first pass:
 
-- move paddle movement into `PaddleBehaviorComponent`
-- move ball serve and motion logic into `BallBehaviorComponent`
-- move brick hit or destruction response into `BrickBehaviorComponent`
-- attach `RoundBehaviorComponent` to a dedicated `GameState` object
+- moved paddle movement into `PaddleBehavior`
+- moved ball serve and motion logic into `BallBehavior`
+- moved brick hit and destruction response into `BrickBehavior`
+- attached `RoundBehavior` to a dedicated `GameState` object
 - keep scene reset and level construction outside behavior components
 - introduce scene events only where they remove obvious coupling
 

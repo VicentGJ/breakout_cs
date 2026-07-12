@@ -6,9 +6,9 @@ The engine needs a small, reliable physics layer that can answer one question we
 
 The design goal is to keep the engine responsible for geometry and correction, while keeping game-specific behavior such as score, brick destruction, and bounce behavior in the game layer.
 
-## What V1 Covers
+## Implemented V1
 
-Version 1 is box-only. That keeps the first physics pass small and focused. Every collidable object is represented by a `BoxCollider` with a local size. The collider is centered on the object origin, and the object’s `Transform2D` provides the world-space position.
+Version 1 is box-only. Every collidable object is represented by a `BoxColliderComponent` with a local size. The collider is centered on the object origin, and the object’s `Transform2D` provides the world-space position.
 
 This first version must support three things:
 
@@ -26,7 +26,7 @@ Circle colliders are also out of scope for the first pass. They may be added lat
 
 ## Public Shape Model
 
-The public collision shape for v1 is `BoxCollider`.
+The public collision shape for v1 is `BoxColliderComponent`.
 
 It should hold local-space shape data only. The collider should not store world-space state or attempt to own the object’s transform. Instead, it should be a component-style data structure attached to an object, with the world position coming from `Transform2D` when collision queries run.
 
@@ -51,11 +51,9 @@ The module should feel closer to Unity than to a separate query service. The col
 The v1 surface should look like this:
 
 ```csharp
-struct BoxCollider
+struct BoxColliderComponent
 {
     Vector2 Size;
-
-    Collision GetCollision(in BoxCollider other, in Transform2D selfTransform, in Transform2D otherTransform);
 }
 
 struct Collision
@@ -71,7 +69,7 @@ static class CollisionHelper
 }
 ```
 
-`GetCollision` takes two colliders and their transforms and returns a signed `Collision` result. `Distance > 0` means the boxes are separated, `Distance == 0` means they are touching, and `Distance < 0` means they overlap.
+`BoxCollision.GetCollision` takes two colliders and their transforms and returns a signed `Collision` result. `Distance > 0` means the boxes are separated, `Distance == 0` means they are touching, and `Distance < 0` means they overlap.
 
 `CollisionHelper.GetCorrection` turns a signed `Collision` into the correction vector the caller applies to separate the objects. For a zero or positive distance result, it should return `Vector2.Zero`.
 
@@ -80,10 +78,10 @@ This keeps the public API small and readable. Game code talks to colliders direc
 Example flow:
 
 ```csharp
-var playerBox = player.GetComponent<BoxCollider>();
-var wallBox = wall.GetComponent<BoxCollider>();
+var playerBox = player.Get<BoxColliderComponent>();
+var wallBox = wall.Get<BoxColliderComponent>();
 
-var collision = playerBox.GetCollision(wallBox, player.Transform2D, wall.Transform2D);
+var collision = BoxCollision.GetCollision(playerBox, wallBox, player.Transform2D, wall.Transform2D);
 var correction = CollisionHelper.GetCorrection(collision);
 
 player.Transform2D.Position -= correction;
@@ -92,7 +90,7 @@ player.Transform2D.Position -= correction;
 Example flow with the signed result:
 
 ```csharp
-var collision = playerBox.GetCollision(wallBox, player.Transform2D, wall.Transform2D);
+var collision = BoxCollision.GetCollision(playerBox, wallBox, player.Transform2D, wall.Transform2D);
 
 if (collision.Distance < 0)
 {
@@ -114,7 +112,7 @@ For v1, all three fields are part of the public result. `Point` is included for 
 
 The physics module decides geometry. It should answer whether objects overlap, which side the contact came from, how far the overlap goes, and how to move the objects apart.
 
-The physics module should not decide game meaning. It should not destroy bricks, update score, choose a special bounce angle, or determine win and lose state. Those are gameplay rules and belong in `CollisionSystem` or another game-side system.
+The physics module should not decide game meaning. It should not destroy bricks, update score, choose a special bounce angle, or determine win and lose state. Those are gameplay rules and belong in game-side behavior components.
 
 This split keeps the engine reusable. The same collision code can later support a different game with different rules.
 
@@ -122,36 +120,22 @@ This split keeps the engine reusable. The same collision code can later support 
 
 The module should live under `Engine/Physics/` and stay small enough to reason about easily.
 
-- `BoxCollider.cs`: the component type and the public collider-facing methods
+- `BoxColliderComponent.cs`: the component type
 - `Collision.cs`: collision result data
 - `CollisionHelper.cs`: helper math such as correction vectors
 - `BoxCollision.cs`: internal box-box intersection and contact math
 
 That layout keeps shape data, math, and query code separated without over-engineering the first version.
 
-## Migration Plan
+## Current Boundary
 
-The migration should be mechanical and low-risk.
+This first pass is complete. The engine provides box collision geometry and correction. `BallBehavior` applies Breakout-specific movement, bounce, brick destruction, and round consequences.
 
-First, create the new physics folder and move the box-collider data into it.
-
-Next, implement box-box overlap testing and contact generation.
-
-Then replace the current collision math usage with the new physics module.
-
-After that, keep `CollisionSystem` focused on gameplay responses such as brick destruction, score changes, and paddle bounce behavior.
-
-Once all callers use the new module, retire `GameObjectGeometry.cs`.
-
-## Done When
-
-This first pass is complete when the engine can correctly handle rectangular collision cases for the current Breakout game and the game layer no longer contains geometry math.
-
-At that point, the engine should have:
+The engine has:
 
 - geometry in `Engine/Physics/`
 
-- game rules in the game systems
+- game rules in behavior components
 
 - a single box collider shape for v1
 

@@ -20,14 +20,14 @@ Each frame `Application` updates time, calls the scene hook, dispatches behavior
 
 ## Scene, Object, And Behavior Model
 
-`Scene` is the base container for world objects. It owns object membership, assigns IDs, exposes a scene-scoped `EventBus`, and dispatches behavior lifecycle hooks. Objects can be created through the protected scene helper or added with `AddObject`.
+`Scene` is the base container for world objects. It owns object membership, assigns IDs, exposes a scene-scoped `EventBus`, and dispatches behavior lifecycle hooks. Objects are added with `AddObject`.
 
 `GameObject` is the unit of composition. It stores a name, ID, active flag, `Transform2D`, passive data components, and behavior components. Passive components are structs keyed by component type and accessed with `Add`, `Set`, `Has`, `Get`, and `TryGet`.
 
 `BehaviorComponent` is the executable component base. It is a class with reference semantics, an `Enabled` flag, and owner/scene references assigned on attachment. The lifecycle is deterministic:
 
 1. `OnAttach` when the behavior joins a scene-owned object.
-2. `Start` once before the first phase callback.
+2. `OnStart` once before the first phase callback.
 3. `Update(float dt)` during normal frame logic.
 4. `PhysicsUpdate(float dt)` during physics-phase logic.
 5. `OnDetach` when the object leaves the scene.
@@ -45,7 +45,7 @@ Events represent facts that already happened, not commands. Breakout currently p
 - `BrickDestroyedEvent`
 - `RoundStartedEvent`
 
-This keeps communication decoupled where useful. For structural relationships, direct references remain valid. For example, ball behavior reads the paddle and brick list from `BreakoutScene`, while score/life state reacts to published facts.
+This keeps communication decoupled where useful. For structural relationships, direct references remain valid. For example, ball behavior receives the paddle and brick list during scene setup, while score/life state reacts to published facts.
 
 ## Rendering
 
@@ -65,13 +65,13 @@ The split remains: engine physics answers geometric questions; game behavior dec
 
 ## Breakout Game Flow
 
-Game object modules live under `Game/Components/<ObjectName>/`. Each module keeps the object's data component and behavior together when both exist, such as `Game/Components/Ball/BallComponent.cs` and `Game/Components/Ball/BallBehavior.cs`.
+Game object modules live under `Game/Objects/<ObjectName>/`. Each module keeps the object's data component, behavior, and construction recipe together when applicable, such as `Game/Objects/Ball/BallComponent.cs`, `BallBehavior.cs`, and `BallObject.cs`.
 
 Game event definitions live under `Game/Runtime`, beside other game flow primitives rather than in a standalone events module.
 
-`BreakoutScene` stores screen dimensions, arena rectangle, input snapshot, phase, score, lives, remaining brick count, and direct references to the paddle, ball, and bricks. It also creates a dedicated `GameState` object with `RoundBehavior`.
+`BreakoutScene` stores screen dimensions, arena rectangle, input snapshot, phase, score, lives, and remaining brick count. Its setup method creates a dedicated `GameState` object with `RoundBehavior`, then wires paddle, ball, and the shared brick list directly into the behaviors that need them.
 
-`RoundBehavior` owns round and game-state flow. On start it creates a new game through `LevelBuilder`, resets core objects through the scene, and enters serving phase. It subscribes to brick and ball events. Brick destruction updates score and win state. Ball out-of-bounds reduces lives, resets the round, or enters lost state. In won/lost phases, confirm input starts a fresh game.
+`RoundBehavior` owns round and game-state flow. On start it creates a new game through `LevelBuilder`, resets its wired paddle and ball references, and enters serving phase. It subscribes to brick and ball events. Brick destruction updates score and win state. Ball out-of-bounds reduces lives, resets the round, or enters lost state. In won/lost phases, confirm input starts a fresh game.
 
 `PaddleBehavior` owns paddle movement during serving and playing phases.
 

@@ -2,9 +2,9 @@
 
 ## Purpose
 
-This document defines the next direction for scene setup and object relationships.
+This document records the implemented scene setup and object-relationship direction.
 
-The current refactor moved Breakout object construction out of `BreakoutScene`, but the scene still owns direct gameplay references and lifecycle helpers for paddle, ball, and bricks. Moving those references into a generic lookup API would only hide the coupling. The ball really does depend on the paddle. The round flow really does reset the paddle, ball, and brick wall.
+The refactor moved object construction into focused object recipes and scene setup. Moving their relationships into a generic lookup API would only hide the coupling. The ball really does depend on the paddle. The round flow really does reset the paddle, ball, and brick wall.
 
 The goal is to make those relationships explicit at setup time:
 
@@ -43,7 +43,7 @@ abstract class Scene
 }
 ```
 
-`Runtime` should install scenes through one private method that calls `Setup()` exactly once per scene instance. Use that method from both the constructor and `ChangeScene`.
+`Application` installs scenes through `ChangeScene`, which calls `Setup()` exactly once per scene instance. The constructor uses the same path.
 
 Setup is for initial object graph creation only. It should create objects, attach components, attach behaviors, and build initial content. It should not run per-frame logic.
 
@@ -214,16 +214,9 @@ Component queries may still be useful later for systems such as rendering, physi
 
 Promoting the brick list into a `BrickWall` object may make sense later if the wall gains behavior such as patterns, animations, layout state, damage rules, or object hierarchy. Do not add it as a named list now.
 
-## Migration Plan
+## Implementation Status
 
-1. Add `Scene.Setup()` and call it once from runtime scene installation.
-2. Add `GameStateObject.Create(scene)` and `GameStateObject.AddRoundBehavior(...)`.
-3. Create a shared `List<GameObject>` for bricks during `BreakoutScene.Setup()`.
-4. Move initial object creation into `BreakoutScene.Setup()`.
-5. Update `BallObject.Create` and `BallBehavior` to accept paddle and brick list references.
-6. Update `RoundBehavior` to accept paddle, ball, and brick list references.
-7. Update `LevelBuilder` to build into the brick list and return created brick count.
-8. Remove direct object fields and helper methods from `BreakoutScene`.
+This design is implemented. `BreakoutScene.Setup()` creates the game-state object, shared brick list, paddle, ball, and presentation objects. `BallBehavior` and `RoundBehavior` receive their required references during setup, and `LevelBuilder` builds into the shared list.
 
 ## Verification
 
