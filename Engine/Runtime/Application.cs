@@ -4,6 +4,7 @@ namespace Breakout;
 
 sealed class Application
 {
+    private readonly RenderSystem _renderSystem = new();
     private readonly int _windowWidth;
     private readonly int _windowHeight;
     private readonly string _title;
@@ -67,7 +68,8 @@ sealed class Application
 
     private void Draw()
     {
-        ActiveScene.Draw();
+        Raylib.ClearBackground(ActiveScene.BackgroundColor);
+        _renderSystem.Draw(ActiveScene.Objects);
     }
 }
 

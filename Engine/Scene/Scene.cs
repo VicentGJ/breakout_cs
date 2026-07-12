@@ -1,3 +1,5 @@
+using Raylib_cs;
+
 namespace Breakout;
 
 abstract class Scene
@@ -11,6 +13,8 @@ abstract class Scene
 
     public IReadOnlyList<GameObject> Objects => _objects;
 
+    public Color BackgroundColor { get; set; } = Color.Black;
+
     public virtual void Setup()
     {
     }
@@ -20,10 +24,6 @@ abstract class Scene
     }
 
     public virtual void PhysicsUpdate(float dt)
-    {
-    }
-
-    public virtual void Draw()
     {
     }
 

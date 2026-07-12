@@ -6,17 +6,17 @@ This codebase is split into a small engine layer and a Breakout-specific game la
 
 The core execution shape is now:
 
-`Program -> Application -> Scene -> GameObjects -> Components`
+`Program -> Application -> active Scene -> GameObjects -> Components`
 
-`Application` owns the Raylib window loop, active scene, runtime time state, and frame phase ordering. It does not know Breakout systems or concrete gameplay component types. `Scene` owns objects and events. `GameObject` owns components. Every component inherits `Component`; game components own object-local logic and communicate scene-level facts through typed events.
+`Application` owns the Raylib window loop, active scene, runtime time state, frame phase ordering, and generic render execution. It does not know Breakout systems or concrete gameplay component types. `Scene` owns objects, background configuration, and events. `GameObject` owns components. Every component inherits `Component`; game components own object-local logic and communicate scene-level facts through typed events.
 
 ## Process Model
 
 Execution starts in `Program.cs`, which creates a `BreakoutScene` with the window dimensions and passes it into `Application`. `Application` is the outer loop wrapper around Raylib. It opens the window, sets the target FPS, owns `RuntimeTime` and the active scene, and runs a four-stage frame cycle: `BeginFrame`, `Update`, `PhysicsUpdate`, and `Draw`.
 
-Each frame `Application` updates time, calls the scene hook, dispatches `IUpdatable` components, calls the scene physics hook, dispatches `IPhysicsUpdatable` components, and then asks the scene to draw. It does not poll Breakout input, reset rounds, handle collisions, score bricks, or inspect game phases. Runtime-adjacent infrastructure such as `EventBus` still lives under `Engine/Runtime`.
+Each frame `Application` updates time, calls the scene hook, dispatches `IUpdatable` components, calls the scene physics hook, dispatches `IPhysicsUpdatable` components, clears the scene background, and calls `RenderSystem.Draw(ActiveScene.Objects)`. It does not poll Breakout input, reset rounds, handle collisions, score bricks, or inspect game phases. Runtime-adjacent infrastructure such as `EventBus` still lives under `Engine/Runtime`.
 
-`BreakoutScene` polls input in its scene update hook, clears the frame background, invokes the generic `RenderSystem`, and exposes Breakout state used by game components. Gameplay phase gates live inside those components.
+`BreakoutScene` sets its background color, polls input in its scene update hook, and exposes Breakout state used by game components. Gameplay phase gates live inside those components. It has no Breakout-specific draw hook.
 
 ## Scene, Object, And Behavior Model
 
@@ -49,7 +49,7 @@ This keeps communication decoupled where useful. For structural relationships, d
 
 ## Rendering
 
-Rendering remains component-driven. `Engine/Rendering/RenderSystem.cs` gathers visible active objects, picks the first renderer component it understands, sorts entries by `GameObject.ZIndex`, and draws them in order.
+Rendering remains component-driven. `Application` clears `ActiveScene.BackgroundColor` and owns one generic `RenderSystem`, which gathers visible active objects from `ActiveScene.Objects`, picks the first renderer component it understands, sorts entries by `GameObject.ZIndex`, and draws them in order.
 
 `GameObject` carries shared render state: visibility, draw order, and modulation color. Shape-specific renderer components describe visual data. `RectangleRendererComponent`, `CircleRendererComponent`, and `TextRendererComponent` are handled by corresponding renderer handlers.
 

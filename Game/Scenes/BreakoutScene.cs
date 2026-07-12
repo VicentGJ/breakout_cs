@@ -4,13 +4,12 @@ namespace Breakout;
 
 sealed class BreakoutScene : Scene
 {
-    private readonly RenderSystem _renderSystem = new();
-
     public BreakoutScene(int screenWidth, int screenHeight)
     {
         ScreenWidth = screenWidth;
         ScreenHeight = screenHeight;
         Arena = new Rectangle(32f, BreakoutRules.HudHeight + 8f, screenWidth - 64f, screenHeight - BreakoutRules.HudHeight - 40f);
+        BackgroundColor = BreakoutTheme.BackgroundColor;
     }
 
     internal int ScreenWidth { get; }
@@ -48,9 +47,4 @@ sealed class BreakoutScene : Scene
         Input = InputState.Poll();
     }
 
-    public override void Draw()
-    {
-        Raylib.ClearBackground(BreakoutTheme.BackgroundColor);
-        _renderSystem.Draw(Objects);
-    }
 }

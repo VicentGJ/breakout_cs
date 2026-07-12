@@ -14,8 +14,8 @@ The scene remains the generic owner of game objects. Game-specific relationships
 
 ## Design Goals
 
-- `Scene` owns the object list, events, and lifecycle dispatch.
-- `BreakoutScene` keeps Breakout-level context: screen size, arena, phase, score, lives, input, draw hook.
+- `Scene` owns the object list, background color, events, and lifecycle dispatch.
+- `BreakoutScene` keeps Breakout-level context: screen size, arena, phase, score, lives, and input.
 - Game objects are created during scene setup, not hidden inside unrelated runtime methods.
 - Behaviors receive direct references to objects or small collections they actually depend on.
 - Object recipes remain responsible for constructing objects and attaching components/behaviors.
@@ -182,7 +182,8 @@ After this refactor, remove these direct gameplay members from `BreakoutScene`:
 - `BricksRemaining`
 - `Input`
 - `Update`
-- `Draw`
+
+`Application` owns generic draw execution: it clears `Scene.BackgroundColor` and renders `Scene.Objects` with its shared `RenderSystem`. `BreakoutScene` has no game-specific draw hook.
 
 Behaviors may still cast `Scene` to `BreakoutScene` for Breakout context: arena bounds, phase, input, score, lives, and remaining brick count.
 
