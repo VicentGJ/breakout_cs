@@ -20,7 +20,7 @@ sealed class RenderSystem
 
         foreach (GameObject gameObject in objects)
         {
-            if (!gameObject.Active || !gameObject.TryGet(out CanvasItemComponent canvasItem) || !canvasItem.Visible)
+            if (!gameObject.Active || !gameObject.Visible)
             {
                 continue;
             }
@@ -32,27 +32,27 @@ sealed class RenderSystem
                     continue;
                 }
 
-                _entries.Add(new RenderEntry(gameObject, gameObject.Transform2D, canvasItem, handler));
+                _entries.Add(new RenderEntry(gameObject, gameObject.Transform2D, handler));
                 break;
             }
         }
 
-        _entries.Sort(static (left, right) => left.CanvasItem.ZIndex.CompareTo(right.CanvasItem.ZIndex));
+        _entries.Sort(static (left, right) => left.GameObject.ZIndex.CompareTo(right.GameObject.ZIndex));
 
         foreach (RenderEntry entry in _entries)
         {
-            entry.Handler.Draw(entry.GameObject, entry.Transform, entry.CanvasItem);
+            entry.Handler.Draw(entry.GameObject, entry.Transform);
         }
     }
 
-    private readonly record struct RenderEntry(GameObject GameObject, Transform2D Transform, CanvasItemComponent CanvasItem, IRenderComponentHandler Handler);
+    private readonly record struct RenderEntry(GameObject GameObject, Transform2D Transform, IRenderComponentHandler Handler);
 }
 
 interface IRenderComponentHandler
 {
     bool CanDraw(GameObject gameObject);
 
-    void Draw(GameObject gameObject, in Transform2D transform, in CanvasItemComponent canvasItem);
+    void Draw(GameObject gameObject, in Transform2D transform);
 }
 
 abstract class RenderComponentHandler<T> : IRenderComponentHandler where T : struct, IComponent
@@ -62,12 +62,12 @@ abstract class RenderComponentHandler<T> : IRenderComponentHandler where T : str
         return gameObject.Has<T>();
     }
 
-    public void Draw(GameObject gameObject, in Transform2D transform, in CanvasItemComponent canvasItem)
+    public void Draw(GameObject gameObject, in Transform2D transform)
     {
-        Draw(gameObject, transform, canvasItem, gameObject.Get<T>());
+        Draw(gameObject, transform, gameObject.Get<T>());
     }
 
-    protected abstract void Draw(GameObject gameObject, in Transform2D transform, in CanvasItemComponent canvasItem, in T renderer);
+    protected abstract void Draw(GameObject gameObject, in Transform2D transform, in T renderer);
 
     protected static Color Modulate(Color color, Color modulate)
     {
@@ -81,46 +81,46 @@ abstract class RenderComponentHandler<T> : IRenderComponentHandler where T : str
 
 sealed class RectangleRenderHandler : RenderComponentHandler<RectangleRendererComponent>
 {
-    protected override void Draw(GameObject gameObject, in Transform2D transform, in CanvasItemComponent canvasItem, in RectangleRendererComponent renderer)
+    protected override void Draw(GameObject gameObject, in Transform2D transform, in RectangleRendererComponent renderer)
     {
         Vector2 size = Vector2.Multiply(renderer.Size, transform.Scale);
         Rectangle rectangle = new(transform.Position.X + renderer.Offset.X, transform.Position.Y + renderer.Offset.Y, size.X, size.Y);
         Vector2 origin = Vector2.Multiply(renderer.Origin, transform.Scale);
         float rotationDegrees = transform.Rotation * (180f / MathF.PI);
 
-        Raylib.DrawRectanglePro(rectangle, origin, rotationDegrees, Modulate(renderer.FillColor, canvasItem.Modulate));
+        Raylib.DrawRectanglePro(rectangle, origin, rotationDegrees, Modulate(renderer.FillColor, gameObject.Modulate));
 
         if (renderer.StrokeColor is Color strokeColor && MathF.Abs(transform.Rotation) < 0.0001f)
         {
             Rectangle strokeRectangle = new(rectangle.X - origin.X, rectangle.Y - origin.Y, rectangle.Width, rectangle.Height);
-            Raylib.DrawRectangleLinesEx(strokeRectangle, 1f, Modulate(strokeColor, canvasItem.Modulate));
+            Raylib.DrawRectangleLinesEx(strokeRectangle, 1f, Modulate(strokeColor, gameObject.Modulate));
         }
     }
 }
 
 sealed class CircleRenderHandler : RenderComponentHandler<CircleRendererComponent>
 {
-    protected override void Draw(GameObject gameObject, in Transform2D transform, in CanvasItemComponent canvasItem, in CircleRendererComponent renderer)
+    protected override void Draw(GameObject gameObject, in Transform2D transform, in CircleRendererComponent renderer)
     {
         Vector2 center = transform.Position + renderer.Offset;
         float scale = MathF.Max(MathF.Abs(transform.Scale.X), MathF.Abs(transform.Scale.Y));
         float radius = renderer.Radius * scale;
-        Color color = Modulate(renderer.FillColor, canvasItem.Modulate);
+        Color color = Modulate(renderer.FillColor, gameObject.Modulate);
 
         Raylib.DrawCircleV(center, radius, color);
 
         if (renderer.StrokeColor is Color strokeColor)
         {
-            Raylib.DrawCircleLinesV(center, radius, Modulate(strokeColor, canvasItem.Modulate));
+            Raylib.DrawCircleLinesV(center, radius, Modulate(strokeColor, gameObject.Modulate));
         }
     }
 }
 
 sealed class TextRenderHandler : RenderComponentHandler<TextRendererComponent>
 {
-    protected override void Draw(GameObject gameObject, in Transform2D transform, in CanvasItemComponent canvasItem, in TextRendererComponent renderer)
+    protected override void Draw(GameObject gameObject, in Transform2D transform, in TextRendererComponent renderer)
     {
         Vector2 position = transform.Position + renderer.Offset;
-        Raylib.DrawText(renderer.Text, (int)position.X, (int)position.Y, renderer.FontSize, Modulate(renderer.Color, canvasItem.Modulate));
+        Raylib.DrawText(renderer.Text, (int)position.X, (int)position.Y, renderer.FontSize, Modulate(renderer.Color, gameObject.Modulate));
     }
 }

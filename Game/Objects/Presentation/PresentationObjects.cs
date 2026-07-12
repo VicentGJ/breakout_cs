@@ -42,7 +42,7 @@ static class PresentationObjects
     {
         GameObject gameObject = new(name);
         gameObject.Transform2D = new Transform2D { Position = position, Scale = Vector2.One };
-        gameObject.Add(new CanvasItemComponent { Visible = true, ZIndex = zIndex, Modulate = Color.White });
+        gameObject.ZIndex = zIndex;
         gameObject.Add(new RectangleRendererComponent { Size = size, FillColor = fillColor });
         scene.AddObject(gameObject);
         return gameObject;
@@ -52,7 +52,7 @@ static class PresentationObjects
     {
         GameObject gameObject = new(name);
         gameObject.Transform2D = new Transform2D { Position = position, Scale = Vector2.One };
-        gameObject.Add(new CanvasItemComponent { Visible = true, ZIndex = zIndex, Modulate = Color.White });
+        gameObject.ZIndex = zIndex;
         gameObject.Add(new TextRendererComponent { FontSize = fontSize, Color = color });
         scene.AddObject(gameObject);
         return gameObject;

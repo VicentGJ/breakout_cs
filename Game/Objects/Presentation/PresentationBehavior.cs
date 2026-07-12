@@ -88,9 +88,7 @@ sealed class PresentationBehavior : BehaviorComponent
 
     private static void SetVisible(GameObject gameObject, bool visible)
     {
-        CanvasItemComponent canvasItem = gameObject.Get<CanvasItemComponent>();
-        canvasItem.Visible = visible;
-        gameObject.Set(canvasItem);
+        gameObject.Visible = visible;
     }
 
     private static void CenterText(GameObject gameObject, int screenWidth, float y)

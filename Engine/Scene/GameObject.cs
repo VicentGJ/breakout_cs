@@ -1,3 +1,5 @@
+using Raylib_cs;
+
 namespace Breakout;
 
 sealed class GameObject
@@ -16,6 +18,12 @@ sealed class GameObject
     public string Name { get; }
 
     public bool Active { get; set; } = true;
+
+    public bool Visible { get; set; } = true;
+
+    public int ZIndex { get; set; }
+
+    public Color Modulate { get; set; } = Color.White;
 
     public Transform2D Transform2D { get; set; } = global::Breakout.Transform2D.Default;
 

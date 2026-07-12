@@ -9,7 +9,7 @@ static class BrickObject
     {
         GameObject gameObject = new($"Brick-{index}");
         gameObject.Transform2D = new Transform2D { Position = position + size * 0.5f, Scale = Vector2.One };
-        gameObject.Add(new CanvasItemComponent { Visible = true, ZIndex = 10, Modulate = Color.White });
+        gameObject.ZIndex = 10;
         gameObject.Add(new BrickComponent { Points = points });
         gameObject.Add(new RectangleRendererComponent
         {

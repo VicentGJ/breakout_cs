@@ -49,9 +49,9 @@ This keeps communication decoupled where useful. For structural relationships, d
 
 ## Rendering
 
-Rendering remains component-driven. `Engine/Rendering/RenderSystem.cs` gathers visible active objects, picks the first renderer component it understands, sorts entries by `CanvasItemComponent.ZIndex`, and draws them in order.
+Rendering remains component-driven. `Engine/Rendering/RenderSystem.cs` gathers visible active objects, picks the first renderer component it understands, sorts entries by `GameObject.ZIndex`, and draws them in order.
 
-`CanvasItemComponent` gates rendering and carries modulation color. Shape-specific renderer components describe visual data. `RectangleRendererComponent`, `CircleRendererComponent`, and `TextRendererComponent` are handled by corresponding renderer handlers.
+`GameObject` carries shared render state: visibility, draw order, and modulation color. Shape-specific renderer components describe visual data. `RectangleRendererComponent`, `CircleRendererComponent`, and `TextRendererComponent` are handled by corresponding renderer handlers.
 
 Breakout presentation is modeled as scene objects. The arena, HUD text, and overlay panel/text use regular renderer components, while `PresentationBehavior` updates score, lives, text alignment, and overlay visibility from scene state.
 
