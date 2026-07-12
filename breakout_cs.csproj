@@ -11,4 +11,8 @@
     <PackageReference Include="Raylib-cs" Version="7.0.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="Game/Assets/**/*" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
