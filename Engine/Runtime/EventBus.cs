@@ -60,20 +60,11 @@ sealed class EventBus
         }
     }
 
-    private class Subscription : IDisposable
+    private class Subscription(EventBus eventBus, Type eventType, Delegate handler) : IDisposable
     {
-        private readonly EventBus _eventBus;
+        public Type EventType { get; } = eventType;
 
-        public Subscription(EventBus eventBus, Type eventType, Delegate handler)
-        {
-            _eventBus = eventBus;
-            EventType = eventType;
-            Handler = handler;
-        }
-
-        public Type EventType { get; }
-
-        public Delegate Handler { get; }
+        public Delegate Handler { get; } = handler;
 
         public bool IsDisposed { get; set; }
 
@@ -81,7 +72,7 @@ sealed class EventBus
         {
             if (!IsDisposed)
             {
-                _eventBus.Unsubscribe(this);
+                eventBus.Unsubscribe(this);
             }
         }
     }

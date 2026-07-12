@@ -2,20 +2,15 @@ using Raylib_cs;
 
 namespace Breakout;
 
-sealed class GameObject
+sealed class GameObject(string name)
 {
     private readonly Dictionary<Type, Component> _components = [];
     private readonly List<Component> _componentList = [];
     private Scene? _scene;
 
-    public GameObject(string name)
-    {
-        Name = name;
-    }
-
     public int Id { get; private set; }
 
-    public string Name { get; }
+    public string Name { get; } = name;
 
     public bool Active { get; set; } = true;
 

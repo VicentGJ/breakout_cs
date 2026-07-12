@@ -3,17 +3,9 @@ using Raylib_cs;
 
 namespace Breakout;
 
-sealed class BallBehavior : Component, IUpdatable, IPhysicsUpdatable
+sealed class BallBehavior(GameObject paddle, IReadOnlyList<GameObject> bricks) : Component, IUpdatable, IPhysicsUpdatable
 {
-    private readonly GameObject _paddle;
-    private readonly IReadOnlyList<GameObject> _bricks;
     private AudioComponent _audio = null!;
-
-    public BallBehavior(GameObject paddle, IReadOnlyList<GameObject> bricks)
-    {
-        _paddle = paddle;
-        _bricks = bricks;
-    }
 
     protected override void OnAttach()
     {
@@ -55,8 +47,8 @@ sealed class BallBehavior : Component, IUpdatable, IPhysicsUpdatable
 
     private void StickToPaddle()
     {
-        Transform2D paddleTransform = _paddle.Transform2D;
-        RectangleRendererComponent paddleRenderer = _paddle.Get<RectangleRendererComponent>();
+        Transform2D paddleTransform = paddle.Transform2D;
+        RectangleRendererComponent paddleRenderer = paddle.Get<RectangleRendererComponent>();
         Transform2D ballTransform = Owner.Transform2D;
         BallComponent ball = Owner.Get<BallComponent>();
         CircleRendererComponent ballRenderer = Owner.Get<CircleRendererComponent>();
@@ -131,8 +123,8 @@ sealed class BallBehavior : Component, IUpdatable, IPhysicsUpdatable
         Transform2D ballTransform = Owner.Transform2D;
         BallComponent ball = Owner.Get<BallComponent>();
         BoxColliderComponent ballCollider = Owner.Get<BoxColliderComponent>();
-        BoxColliderComponent paddleCollider = _paddle.Get<BoxColliderComponent>();
-        Transform2D paddleTransform = _paddle.Transform2D;
+        BoxColliderComponent paddleCollider = paddle.Get<BoxColliderComponent>();
+        Transform2D paddleTransform = paddle.Transform2D;
         Collision collision = ballCollider.GetCollision(paddleCollider, ballTransform, paddleTransform);
 
         if (ball.Velocity.Y <= 0f || collision.Distance >= 0f)
@@ -156,7 +148,7 @@ sealed class BallBehavior : Component, IUpdatable, IPhysicsUpdatable
         Transform2D ballTransform = Owner.Transform2D;
         BoxColliderComponent ballCollider = Owner.Get<BoxColliderComponent>();
 
-        foreach (GameObject brickObject in _bricks)
+        foreach (GameObject brickObject in bricks)
         {
             if (!brickObject.Active)
             {

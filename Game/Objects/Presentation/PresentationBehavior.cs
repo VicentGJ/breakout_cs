@@ -3,41 +3,24 @@ using Raylib_cs;
 
 namespace Breakout;
 
-sealed class PresentationBehavior : Component, IUpdatable
+sealed class PresentationBehavior(
+    GameObject scoreText,
+    GameObject livesText,
+    GameObject controlsText,
+    GameObject overlayPanel,
+    GameObject overlayTitle,
+    GameObject overlaySubtitle) : Component, IUpdatable
 {
-    private readonly GameObject _scoreText;
-    private readonly GameObject _livesText;
-    private readonly GameObject _controlsText;
-    private readonly GameObject _overlayPanel;
-    private readonly GameObject _overlayTitle;
-    private readonly GameObject _overlaySubtitle;
-
-    public PresentationBehavior(
-        GameObject scoreText,
-        GameObject livesText,
-        GameObject controlsText,
-        GameObject overlayPanel,
-        GameObject overlayTitle,
-        GameObject overlaySubtitle)
-    {
-        _scoreText = scoreText;
-        _livesText = livesText;
-        _controlsText = controlsText;
-        _overlayPanel = overlayPanel;
-        _overlayTitle = overlayTitle;
-        _overlaySubtitle = overlaySubtitle;
-    }
-
     public void Update(float dt)
     {
         BreakoutScene scene = (BreakoutScene)Scene;
 
-        SetText(_scoreText, $"Score: {scene.Score}");
-        SetText(_livesText, $"Lives: {scene.Lives}");
-        AlignRight(_livesText, scene.ScreenWidth - 32f);
+        SetText(scoreText, $"Score: {scene.Score}");
+        SetText(livesText, $"Lives: {scene.Lives}");
+        AlignRight(livesText, scene.ScreenWidth - 32f);
 
-        SetText(_controlsText, "Move: A/D or arrows   Launch: Space");
-        CenterText(_controlsText, scene.ScreenWidth, scene.ScreenHeight - 28f);
+        SetText(controlsText, "Move: A/D or arrows   Launch: Space");
+        CenterText(controlsText, scene.ScreenWidth, scene.ScreenHeight - 28f);
 
         UpdateOverlay(scene);
     }
@@ -45,9 +28,9 @@ sealed class PresentationBehavior : Component, IUpdatable
     private void UpdateOverlay(BreakoutScene scene)
     {
         bool visible = scene.Phase != GamePhase.Playing;
-        SetVisible(_overlayPanel, visible);
-        SetVisible(_overlayTitle, visible);
-        SetVisible(_overlaySubtitle, visible);
+        SetVisible(overlayPanel, visible);
+        SetVisible(overlayTitle, visible);
+        SetVisible(overlaySubtitle, visible);
 
         if (!visible)
         {
@@ -73,10 +56,10 @@ sealed class PresentationBehavior : Component, IUpdatable
             subtitle = "Press Space or Enter to try again";
         }
 
-        SetText(_overlayTitle, title);
-        SetText(_overlaySubtitle, subtitle);
-        CenterText(_overlayTitle, scene.ScreenWidth, _overlayTitle.Transform2D.Position.Y);
-        CenterText(_overlaySubtitle, scene.ScreenWidth, _overlaySubtitle.Transform2D.Position.Y);
+        SetText(overlayTitle, title);
+        SetText(overlaySubtitle, subtitle);
+        CenterText(overlayTitle, scene.ScreenWidth, overlayTitle.Transform2D.Position.Y);
+        CenterText(overlaySubtitle, scene.ScreenWidth, overlaySubtitle.Transform2D.Position.Y);
     }
 
     private static void SetText(GameObject gameObject, string text)

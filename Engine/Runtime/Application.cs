@@ -2,30 +2,18 @@ using Raylib_cs;
 
 namespace Breakout;
 
-sealed class Application
+sealed class Application(int windowWidth, int windowHeight, string title, Scene initialScene)
 {
     private readonly RenderSystem _renderSystem = new();
-    private readonly int _windowWidth;
-    private readonly int _windowHeight;
-    private readonly string _title;
     private AudioSystem? _audioSystem;
 
-    public Application(int windowWidth, int windowHeight, string title, Scene initialScene)
-    {
-        _windowWidth = windowWidth;
-        _windowHeight = windowHeight;
-        _title = title;
-        Time = new RuntimeTime();
-        ActiveScene = initialScene;
-    }
+    public Scene ActiveScene { get; private set; } = initialScene;
 
-    public Scene ActiveScene { get; private set; }
-
-    public RuntimeTime Time { get; }
+    public RuntimeTime Time { get; } = new();
 
     public void Run()
     {
-        Raylib.InitWindow(_windowWidth, _windowHeight, _title);
+        Raylib.InitWindow(windowWidth, windowHeight, title);
         Raylib.SetTargetFPS(120);
 
         try
