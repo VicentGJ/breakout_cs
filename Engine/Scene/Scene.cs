@@ -11,6 +11,8 @@ abstract class Scene
 
     public EventBus Events { get; } = new();
 
+    internal AudioSystem? Audio { get; private set; }
+
     public IReadOnlyList<GameObject> Objects => _objects;
 
     public Color BackgroundColor { get; set; } = Color.Black;
@@ -65,6 +67,19 @@ abstract class Scene
 
         _setupComplete = true;
         Setup();
+    }
+
+    internal void BindAudio(AudioSystem audio)
+    {
+        Audio = audio;
+    }
+
+    internal void UnbindAudio(AudioSystem audio)
+    {
+        if (Audio == audio)
+        {
+            Audio = null;
+        }
     }
 
     private void DispatchComponents(float dt, bool physicsPhase)

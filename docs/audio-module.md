@@ -4,17 +4,17 @@
 
 Add a small, non-spatial audio system that fits the current component model.
 
-`AudioComponent` gives an object local playback control. `AudioSystem` owns the Raylib audio device, loaded clips, active voices, and volume. Game components decide when a sound happens; the audio engine decides how to play it.
+`AudioComponent` gives an object local playback control. `AudioSystem` owns the Raylib audio device, loaded sounds, active voices, and volume. Game components decide when a sound happens; the audio engine decides how to play it.
 
 ## Version 1
 
-Version 1 supports one-shots, loops, stopping, playback-state queries, per-component volume and pitch, music/SFX categories, and category volume.
+Version 1 supports one-shots, stopping, playback-state queries, per-component volume and pitch, and global master volume.
 
-It does not include spatial audio, listeners, mixer graphs, effects, scheduling, editor tooling, or multiple concurrent voices from one `AudioComponent`.
+It does not include looping or streaming music, spatial audio, listeners, mixer graphs, effects, scheduling, editor tooling, or multiple concurrent voices from one `AudioComponent`.
 
 ## Ownership and Lifetime
 
-`Application` owns one `AudioSystem`, just as it owns the render system. It initializes Raylib's audio device after creating the window and closes it before closing the window.
+`Application` owns one `AudioSystem`, just as it owns the render system. It creates the system after creating the window; the system initializes Raylib's audio device and closes it before the window closes.
 
 Before a scene runs `Setup()`, `Application` binds its `AudioSystem` to that scene. Components added during setup can therefore access audio from their first `OnAttach()` callback.
 
@@ -27,7 +27,7 @@ Program
               -> AudioComponent
 ```
 
-On `ChangeScene`, `Application` stops voices owned by the outgoing scene and unbinds audio from it before binding the incoming scene. Version 1 does not preserve music across scene changes.
+On `ChangeScene`, `Application` stops voices owned by the outgoing scene and unbinds audio from it before binding the incoming scene. Sounds do not persist across scene changes.
 
 `Scene` exposes the bound system internally. This is an engine service reference, not a gameplay dependency:
 
@@ -42,11 +42,9 @@ internal AudioSystem? Audio { get; private set; }
 ```csharp
 sealed class AudioComponent : Component
 {
-    public AudioClip Clip { get; init; } = null!;
-    public AudioCategory Category { get; set; } = AudioCategory.Sfx;
+    public string AssetPath { get; init; } = null!;
     public float Volume { get; set; } = 1f;
     public float Pitch { get; set; } = 1f;
-    public bool Loop { get; set; }
 
     public void Play()
     {
@@ -62,7 +60,7 @@ sealed class AudioComponent : Component
 
     protected override void OnDetach()
     {
-        Scene.Audio?.Stop(this);
+        Scene.Audio?.Release(this);
     }
 
     private AudioSystem GetAudio()
@@ -82,48 +80,33 @@ The component does not keep its own `AudioSystem` reference. Scene binding is en
 ```csharp
 sealed class AudioSystem
 {
-    public float MasterVolume { get; set; } = 1f;
+    public static float MasterVolume { get; set; }
 
-    public AudioClip LoadClip(string assetPath);
     public void Play(AudioComponent component);
     public void Stop(AudioComponent component);
     public bool IsPlaying(AudioComponent component);
     public void StopScene(Scene scene);
-
-    public void SetCategoryVolume(AudioCategory category, float volume);
-    public float GetCategoryVolume(AudioCategory category);
 }
 ```
 
-The effective volume is the component volume multiplied by its category volume and `MasterVolume`.
-
-```csharp
-enum AudioCategory
-{
-    Music,
-    Sfx
-}
-```
-
-`Master` is not a category. It is global mixer state, so it cannot accidentally be assigned to a component.
+The effective volume is the component volume multiplied by `MasterVolume`. Master volume is global Raylib device state; component volume is applied when that component plays.
 
 ## Voice Policy
 
-Each `AudioComponent` owns one active voice. Calling `Play` stops that component's current voice, if any, before starting its assigned clip. `IsPlaying` reports only that voice.
+Each `AudioComponent` owns one active voice. On first play, the audio system loads and caches the component's asset path, then creates a Raylib sound alias for that component. Calling `Play` stops that component's current voice, if any, before starting it again. `IsPlaying` reports only that voice.
 
 This makes the first implementation predictable: no voice handles, no pool, and no ambiguous playback state. Add overlapping voices only when the game demonstrates a need.
 
-## Audio Clips
+## Audio Assets
 
-`AudioClip` is a small engine wrapper around a loaded Raylib sound. `AudioSystem.LoadClip` caches clips by source path and unloads them when the application closes.
+An `AudioComponent` names its local asset path. `AudioSystem` loads and caches its Raylib sound on first play, then unloads all cached sounds when the application closes.
 
-The object recipe that owns a sound chooses its clip directly:
+The object recipe that owns a sound only declares its asset:
 
 ```csharp
 gameObject.Add(new AudioComponent
 {
-    Clip = scene.Audio!.LoadClip(
-        "Game/Assets/Audio/SFX/ball_bounce.wav")
+    AssetPath = "Game/Assets/Audio/SFX/ball_bounce.wav"
 });
 ```
 
@@ -157,14 +140,14 @@ sealed class BallBehavior : Component, IPhysicsUpdatable
 
 The event bus is unnecessary when a behavior plays a sound from its own object. Use it only when a game fact should independently trigger audio from another object or service.
 
-Music uses the same model: a dedicated object has an `AudioComponent` with `Category = Music` and `Loop = true`.
+Streaming and looping music require Raylib's separate music-stream API, so they are deliberately deferred from version 1.
 
 ## Implementation Boundary
 
-1. Add `Engine/Audio/AudioSystem.cs`, `AudioComponent.cs`, and `AudioCategory.cs`.
+1. Add `Engine/Audio/AudioSystem.cs` and `AudioComponent.cs`.
 2. Add internal audio bind/unbind support to `Scene`.
-3. Have `Application` initialize and close the Raylib audio device, bind scenes, and stop outgoing-scene voices.
+3. Have `Application` initialize and close the Raylib audio device, bind scenes before setup, and stop/release outgoing-scene voices.
 4. Add an `AudioComponent` with `ball_bounce.wav` to the ball.
 5. Play the component after a successful bounce.
 
-Do not add music content, overlapping voices, or a custom mixer in this pass.
+Do not add music content, loops, overlapping voices, or a custom mixer in this pass.

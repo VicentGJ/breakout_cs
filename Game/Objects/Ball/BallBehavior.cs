@@ -7,11 +7,17 @@ sealed class BallBehavior : Component, IUpdatable, IPhysicsUpdatable
 {
     private readonly GameObject _paddle;
     private readonly IReadOnlyList<GameObject> _bricks;
+    private AudioComponent _audio = null!;
 
     public BallBehavior(GameObject paddle, IReadOnlyList<GameObject> bricks)
     {
         _paddle = paddle;
         _bricks = bricks;
+    }
+
+    protected override void OnAttach()
+    {
+        _audio = Owner.Get<AudioComponent>();
     }
 
     public void Update(float dt)
@@ -90,25 +96,34 @@ sealed class BallBehavior : Component, IUpdatable, IPhysicsUpdatable
         BallComponent ball = Owner.Get<BallComponent>();
         BoxColliderComponent ballCollider = Owner.Get<BoxColliderComponent>();
         Vector2 ballHalfSize = Vector2.Abs(ballCollider.Size * ballTransform.Scale) * 0.5f;
+        bool bounced = false;
 
         if (ballTransform.Position.X - ballHalfSize.X < scene.Arena.X)
         {
             ballTransform.Position.X = scene.Arena.X + ballHalfSize.X;
             ball.Velocity.X = MathF.Abs(ball.Velocity.X);
+            bounced = true;
         }
         else if (ballTransform.Position.X + ballHalfSize.X > scene.ArenaRight)
         {
             ballTransform.Position.X = scene.ArenaRight - ballHalfSize.X;
             ball.Velocity.X = -MathF.Abs(ball.Velocity.X);
+            bounced = true;
         }
 
         if (ballTransform.Position.Y - ballHalfSize.Y < scene.Arena.Y)
         {
             ballTransform.Position.Y = scene.Arena.Y + ballHalfSize.Y;
             ball.Velocity.Y = MathF.Abs(ball.Velocity.Y);
+            bounced = true;
         }
 
         Owner.Transform2D = ballTransform;
+
+        if (bounced)
+        {
+            _audio.Play();
+        }
     }
 
     private void ResolvePaddleCollision()
@@ -133,6 +148,7 @@ sealed class BallBehavior : Component, IUpdatable, IPhysicsUpdatable
         ball.Velocity = Vector2.Normalize(new Vector2(bounceX, -1f)) * BreakoutRules.BallSpeed;
 
         Owner.Transform2D = ballTransform;
+        _audio.Play();
     }
 
     private void ResolveBrickCollision()
@@ -178,6 +194,7 @@ sealed class BallBehavior : Component, IUpdatable, IPhysicsUpdatable
         }
 
         Owner.Transform2D = ballTransform;
+        _audio.Play();
     }
 
     private void PublishOutOfBounds(BreakoutScene scene)

@@ -8,6 +8,7 @@ sealed class Application
     private readonly int _windowWidth;
     private readonly int _windowHeight;
     private readonly string _title;
+    private AudioSystem? _audioSystem;
 
     public Application(int windowWidth, int windowHeight, string title, Scene initialScene)
     {
@@ -15,8 +16,7 @@ sealed class Application
         _windowHeight = windowHeight;
         _title = title;
         Time = new RuntimeTime();
-        ActiveScene = null!;
-        ChangeScene(initialScene);
+        ActiveScene = initialScene;
     }
 
     public Scene ActiveScene { get; private set; }
@@ -28,23 +28,42 @@ sealed class Application
         Raylib.InitWindow(_windowWidth, _windowHeight, _title);
         Raylib.SetTargetFPS(120);
 
-        while (!Raylib.WindowShouldClose())
+        try
         {
-            BeginFrame(Raylib.GetFrameTime());
-            Update();
-            PhysicsUpdate();
+            _audioSystem = new AudioSystem();
+            ChangeScene(ActiveScene);
 
-            Raylib.BeginDrawing();
-            Draw();
-            Raylib.EndDrawing();
+            while (!Raylib.WindowShouldClose())
+            {
+                BeginFrame(Raylib.GetFrameTime());
+                Update();
+                PhysicsUpdate();
+
+                Raylib.BeginDrawing();
+                Draw();
+                Raylib.EndDrawing();
+            }
         }
-
-        Raylib.CloseWindow();
+        finally
+        {
+            _audioSystem?.Dispose();
+            _audioSystem = null;
+            Raylib.CloseWindow();
+        }
     }
 
     public void ChangeScene(Scene scene)
     {
+        if (_audioSystem is null)
+        {
+            ActiveScene = scene;
+            return;
+        }
+
+        _audioSystem.StopScene(ActiveScene);
+        ActiveScene.UnbindAudio(_audioSystem);
         ActiveScene = scene;
+        ActiveScene.BindAudio(_audioSystem);
         ActiveScene.SetupOnce();
     }
 
