@@ -66,13 +66,6 @@ abstract class Scene
         Setup();
     }
 
-    protected GameObject CreateGameObject(string name)
-    {
-        GameObject gameObject = new(name);
-        AddObject(gameObject);
-        return gameObject;
-    }
-
     private void DispatchBehaviors(float dt, bool physicsPhase)
     {
         for (int objectIndex = 0; objectIndex < _objects.Count; objectIndex++)
