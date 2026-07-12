@@ -2,19 +2,19 @@
 
 ## Overview
 
-This codebase is split into a small engine layer and a Breakout-specific game layer. The engine layer lives under `Engine/` and provides the runtime loop, scene and object model, generic component storage, object-owned behavior lifecycle, a scene-scoped event bus, rendering components, and box-collision utilities. The game layer lives under `Game/` and contains Breakout rules, content tuning, gameplay object modules, scene bootstrap, and final renderer composition.
+This codebase is split into a small engine layer and a Breakout-specific game layer. The engine layer lives under `Engine/` and provides the application loop, scene and object model, generic component storage, object-owned behavior lifecycle, a scene-scoped event bus, rendering components, and box-collision utilities. The game layer lives under `Game/` and contains Breakout rules, content tuning, gameplay object modules, scene bootstrap, and final renderer composition.
 
 The core execution shape is now:
 
-`Program -> Application -> Runtime -> Scene -> GameObjects -> BehaviorComponents`
+`Program -> Application -> Scene -> GameObjects -> BehaviorComponents`
 
-`Runtime` owns frame phase ordering only. It does not know Breakout systems or concrete gameplay behavior types. `Scene` owns objects and events. `GameObject` owns passive data components and active behavior components. Behavior components own object-local gameplay logic and communicate scene-level facts through typed events.
+`Application` owns the Raylib window loop, active scene, runtime time state, and frame phase ordering. It does not know Breakout systems or concrete gameplay behavior types. `Scene` owns objects and events. `GameObject` owns passive data components and active behavior components. Behavior components own object-local gameplay logic and communicate scene-level facts through typed events.
 
 ## Process Model
 
-Execution starts in `Program.cs`, which creates a `BreakoutScene` with the window dimensions and passes it into `Runtime`. `Application` is the outer loop wrapper around Raylib. It opens the window, sets the target FPS, and runs a four-stage frame cycle: `BeginFrame`, `Update`, `PhysicsUpdate`, and `Draw`.
+Execution starts in `Program.cs`, which creates a `BreakoutScene` with the window dimensions and passes it into `Application`. `Application` is the outer loop wrapper around Raylib. It opens the window, sets the target FPS, owns `RuntimeTime` and the active scene, and runs a four-stage frame cycle: `BeginFrame`, `Update`, `PhysicsUpdate`, and `Draw`.
 
-`Runtime` owns `RuntimeTime` and the active scene. Each frame it updates time, calls the scene hook, dispatches behavior `Update`, calls the scene physics hook, dispatches behavior `PhysicsUpdate`, and then asks the scene to draw. Runtime does not poll Breakout input, reset rounds, handle collisions, score bricks, or inspect game phases. Runtime-adjacent infrastructure such as `EventBus` also lives under `Engine/Runtime`.
+Each frame `Application` updates time, calls the scene hook, dispatches behavior `Update`, calls the scene physics hook, dispatches behavior `PhysicsUpdate`, and then asks the scene to draw. It does not poll Breakout input, reset rounds, handle collisions, score bricks, or inspect game phases. Runtime-adjacent infrastructure such as `EventBus` still lives under `Engine/Runtime`.
 
 `BreakoutScene` polls input in its scene update hook, clears the frame background, invokes the generic `RenderSystem`, and exposes Breakout state used by behaviors. Gameplay phase gates now live inside behavior components.
 

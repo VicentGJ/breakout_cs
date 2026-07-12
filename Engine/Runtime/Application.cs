@@ -7,15 +7,20 @@ sealed class Application
     private readonly int _windowWidth;
     private readonly int _windowHeight;
     private readonly string _title;
-    private readonly Runtime _runtime;
 
-    public Application(int windowWidth, int windowHeight, string title, Runtime runtime)
+    public Application(int windowWidth, int windowHeight, string title, Scene initialScene)
     {
         _windowWidth = windowWidth;
         _windowHeight = windowHeight;
         _title = title;
-        _runtime = runtime;
+        Time = new RuntimeTime();
+        ActiveScene = null!;
+        ChangeScene(initialScene);
     }
+
+    public Scene ActiveScene { get; private set; }
+
+    public RuntimeTime Time { get; }
 
     public void Run()
     {
@@ -24,15 +29,53 @@ sealed class Application
 
         while (!Raylib.WindowShouldClose())
         {
-            _runtime.BeginFrame(Raylib.GetFrameTime());
-            _runtime.Update();
-            _runtime.PhysicsUpdate();
+            BeginFrame(Raylib.GetFrameTime());
+            Update();
+            PhysicsUpdate();
 
             Raylib.BeginDrawing();
-            _runtime.Draw();
+            Draw();
             Raylib.EndDrawing();
         }
 
         Raylib.CloseWindow();
     }
+
+    public void ChangeScene(Scene scene)
+    {
+        ActiveScene = scene;
+        ActiveScene.SetupOnce();
+    }
+
+    private void BeginFrame(float unscaledDeltaTime)
+    {
+        Time.UnscaledDeltaTime = unscaledDeltaTime;
+        Time.DeltaTime = unscaledDeltaTime * Time.TimeScale;
+    }
+
+    private void Update()
+    {
+        ActiveScene.Update(Time.DeltaTime);
+        ActiveScene.UpdateBehaviors(Time.DeltaTime);
+    }
+
+    private void PhysicsUpdate()
+    {
+        ActiveScene.PhysicsUpdate(Time.DeltaTime);
+        ActiveScene.PhysicsUpdateBehaviors(Time.DeltaTime);
+    }
+
+    private void Draw()
+    {
+        ActiveScene.Draw();
+    }
+}
+
+sealed class RuntimeTime
+{
+    public float UnscaledDeltaTime { get; internal set; }
+
+    public float DeltaTime { get; internal set; }
+
+    public float TimeScale { get; set; } = 1f;
 }
