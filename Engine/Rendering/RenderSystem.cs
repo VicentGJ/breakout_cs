@@ -3,16 +3,22 @@ using Raylib_cs;
 
 namespace Breakout;
 
-sealed class RenderSystem
+sealed class RenderSystem : IDisposable
 {
-    private readonly IRenderComponentHandler[] _handlers =
-    [
-        new RectangleRenderHandler(),
-        new CircleRenderHandler(),
-        new TextRenderHandler()
-    ];
-
+    private readonly IRenderComponentHandler[] _handlers;
     private readonly List<RenderEntry> _entries = [];
+    private readonly Dictionary<string, Texture2D> _textures = [];
+
+    public RenderSystem()
+    {
+        _handlers =
+        [
+            new RectangleRenderHandler(),
+            new CircleRenderHandler(),
+            new TextRenderHandler(),
+            new SpriteRenderHandler(GetTexture)
+        ];
+    }
 
     public void Draw(IEnumerable<GameObject> objects)
     {
@@ -43,6 +49,35 @@ sealed class RenderSystem
         {
             entry.Handler.Draw(entry.GameObject, entry.Transform);
         }
+    }
+
+    public void Dispose()
+    {
+        foreach (Texture2D texture in _textures.Values)
+        {
+            Raylib.UnloadTexture(texture);
+        }
+
+        _textures.Clear();
+    }
+
+    private Texture2D GetTexture(string assetPath)
+    {
+        if (_textures.TryGetValue(assetPath, out Texture2D texture))
+        {
+            return texture;
+        }
+
+        texture = Raylib.LoadTexture(assetPath);
+
+        if (!Raylib.IsTextureValid(texture))
+        {
+            throw new InvalidOperationException($"Could not load texture '{assetPath}'.");
+        }
+
+        Raylib.SetTextureFilter(texture, TextureFilter.Point);
+        _textures.Add(assetPath, texture);
+        return texture;
     }
 
     private readonly record struct RenderEntry(GameObject GameObject, Transform2D Transform, IRenderComponentHandler Handler);
@@ -122,5 +157,20 @@ sealed class TextRenderHandler : RenderComponentHandler<TextRendererComponent>
     {
         Vector2 position = transform.Position + renderer.Offset;
         Raylib.DrawText(renderer.Text, (int)position.X, (int)position.Y, renderer.FontSize, Modulate(renderer.Color, gameObject.Modulate));
+    }
+}
+
+sealed class SpriteRenderHandler(Func<string, Texture2D> getTexture) : RenderComponentHandler<SpriteRendererComponent>
+{
+    protected override void Draw(GameObject gameObject, in Transform2D transform, SpriteRendererComponent renderer)
+    {
+        Texture2D texture = getTexture(renderer.AssetPath);
+        Vector2 size = Vector2.Multiply(renderer.Size, transform.Scale);
+        Rectangle source = new(0f, 0f, texture.Width, texture.Height);
+        Rectangle destination = new(transform.Position.X + renderer.Offset.X, transform.Position.Y + renderer.Offset.Y, size.X, size.Y);
+        Vector2 origin = Vector2.Multiply(renderer.Origin, transform.Scale);
+        float rotationDegrees = transform.Rotation * (180f / MathF.PI);
+
+        Raylib.DrawTexturePro(texture, source, destination, origin, rotationDegrees, gameObject.Modulate);
     }
 }
