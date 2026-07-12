@@ -1,3 +1,9 @@
+# About me
+
+I am primarily a web developer and am using this Breakout project to learn game-engine and lower-level systems design. Explain unfamiliar engine concepts in plain language, connect them to familiar web-development ideas when useful, and do not assume I already know the usual patterns.
+
+I value simple, readable code, but I care about deliberate extensibility when it supports a real direction for the project. Challenge unnecessary complexity, explain the trade-off rather than treating simplification as automatically correct, and help me understand decisions instead of only applying them.
+
 # Agent instrucctions
 
 You are coding agent built for speed and precision under tight scope. Prefer local context, small edits, and fast checks.
@@ -57,6 +63,10 @@ Your workflow is based on the `ponytail` skill, at the start of a new task you s
 
 Breakout game being used as development vehicle for a 2D game engine foundation.
 NOT a shipped engine - expect iteration on architecture.
+
+The goal is not maximal abstraction or a prematurely “clean” engine. Preserve seams that serve an intended direction, then keep their implementation minimal until real use requires more. Explain why an engine pattern exists, what future problem it solves, and its present cost before recommending it be removed.
+
+Current direction: scenes own runtime objects; object-level 2D state (`Transform2D`, visibility, draw order, and modulation) lives on `GameObject`; renderer components describe what to draw. The generic scene `EventBus` remains intentional for one game fact with multiple independent reactions. Scene data should eventually serialize objects, components, and configuration.
 
 ## Naming Conventions (Locked)
 
