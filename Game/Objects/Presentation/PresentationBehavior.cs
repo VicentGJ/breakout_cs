@@ -3,7 +3,7 @@ using Raylib_cs;
 
 namespace Breakout;
 
-sealed class PresentationBehavior : BehaviorComponent
+sealed class PresentationBehavior : Component, IUpdatable
 {
     private readonly GameObject _scoreText;
     private readonly GameObject _livesText;
@@ -28,7 +28,7 @@ sealed class PresentationBehavior : BehaviorComponent
         _overlaySubtitle = overlaySubtitle;
     }
 
-    public override void Update(float dt)
+    public void Update(float dt)
     {
         BreakoutScene scene = (BreakoutScene)Scene;
 
@@ -83,7 +83,6 @@ sealed class PresentationBehavior : BehaviorComponent
     {
         TextRendererComponent renderer = gameObject.Get<TextRendererComponent>();
         renderer.Text = text;
-        gameObject.Set(renderer);
     }
 
     private static void SetVisible(GameObject gameObject, bool visible)

@@ -4,10 +4,10 @@ namespace Breakout;
 
 static class BoxCollision
 {
-    public static Collision GetCollision(in BoxColliderComponent self, in BoxColliderComponent other, in Transform2D selfTransform, in Transform2D otherTransform)
+    public static Collision GetCollision(BoxColliderComponent self, BoxColliderComponent other, in Transform2D selfTransform, in Transform2D otherTransform)
     {
-        Bounds selfBounds = GetBounds(in self, in selfTransform);
-        Bounds otherBounds = GetBounds(in other, in otherTransform);
+        Bounds selfBounds = GetBounds(self, in selfTransform);
+        Bounds otherBounds = GetBounds(other, in otherTransform);
 
         float overlapX = MathF.Min(selfBounds.Right, otherBounds.Right) - MathF.Max(selfBounds.Left, otherBounds.Left);
         float overlapY = MathF.Min(selfBounds.Bottom, otherBounds.Bottom) - MathF.Max(selfBounds.Top, otherBounds.Top);
@@ -59,7 +59,7 @@ static class BoxCollision
         return new Collision { Normal = normalY, Distance = gapY, Point = ClosestPointOnPerimeter(selfBounds, otherBounds.Center) };
     }
 
-    private static Bounds GetBounds(in BoxColliderComponent collider, in Transform2D transform)
+    private static Bounds GetBounds(BoxColliderComponent collider, in Transform2D transform)
     {
         Vector2 size = collider.Size * transform.Scale;
         Vector2 half = Vector2.Abs(size) * 0.5f;

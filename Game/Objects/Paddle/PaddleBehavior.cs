@@ -1,8 +1,8 @@
 namespace Breakout;
 
-sealed class PaddleBehavior : BehaviorComponent
+sealed class PaddleBehavior : Component, IUpdatable
 {
-    public override void Update(float dt)
+    public void Update(float dt)
     {
         BreakoutScene scene = (BreakoutScene)Scene;
 

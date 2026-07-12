@@ -16,7 +16,6 @@ static class PresentationObjects
             zIndex: 0);
         RectangleRendererComponent arenaRenderer = arenaObject.Get<RectangleRendererComponent>();
         arenaRenderer.StrokeColor = BreakoutTheme.BorderColor;
-        arenaObject.Set(arenaRenderer);
 
         GameObject scoreText = CreateTextObject(scene, "ScoreText", new Vector2(32f, 18f), 24, BreakoutTheme.TextColor, zIndex: 100);
         GameObject livesText = CreateTextObject(scene, "LivesText", Vector2.Zero, 24, BreakoutTheme.TextColor, zIndex: 100);
@@ -28,13 +27,12 @@ static class PresentationObjects
         GameObject overlayPanel = CreateRectangleObject(scene, "OverlayPanel", panelPosition, new Vector2(panelWidth, panelHeight), BreakoutTheme.OverlayColor, zIndex: 200);
         RectangleRendererComponent overlayRenderer = overlayPanel.Get<RectangleRendererComponent>();
         overlayRenderer.StrokeColor = BreakoutTheme.BorderColor;
-        overlayPanel.Set(overlayRenderer);
 
         GameObject overlayTitle = CreateTextObject(scene, "OverlayTitle", new Vector2(0f, panelPosition.Y + 28f), 32, BreakoutTheme.TextColor, zIndex: 201);
         GameObject overlaySubtitle = CreateTextObject(scene, "OverlaySubtitle", new Vector2(0f, panelPosition.Y + 72f), 20, BreakoutTheme.MutedTextColor, zIndex: 201);
 
         GameObject presentationState = new("PresentationState");
-        presentationState.AddBehavior(new PresentationBehavior(scoreText, livesText, controlsText, overlayPanel, overlayTitle, overlaySubtitle));
+        presentationState.Add(new PresentationBehavior(scoreText, livesText, controlsText, overlayPanel, overlayTitle, overlaySubtitle));
         scene.AddObject(presentationState);
     }
 

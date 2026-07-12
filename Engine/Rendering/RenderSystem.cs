@@ -55,7 +55,7 @@ interface IRenderComponentHandler
     void Draw(GameObject gameObject, in Transform2D transform);
 }
 
-abstract class RenderComponentHandler<T> : IRenderComponentHandler where T : struct, IComponent
+abstract class RenderComponentHandler<T> : IRenderComponentHandler where T : Component
 {
     public bool CanDraw(GameObject gameObject)
     {
@@ -67,7 +67,7 @@ abstract class RenderComponentHandler<T> : IRenderComponentHandler where T : str
         Draw(gameObject, transform, gameObject.Get<T>());
     }
 
-    protected abstract void Draw(GameObject gameObject, in Transform2D transform, in T renderer);
+    protected abstract void Draw(GameObject gameObject, in Transform2D transform, T renderer);
 
     protected static Color Modulate(Color color, Color modulate)
     {
@@ -81,7 +81,7 @@ abstract class RenderComponentHandler<T> : IRenderComponentHandler where T : str
 
 sealed class RectangleRenderHandler : RenderComponentHandler<RectangleRendererComponent>
 {
-    protected override void Draw(GameObject gameObject, in Transform2D transform, in RectangleRendererComponent renderer)
+    protected override void Draw(GameObject gameObject, in Transform2D transform, RectangleRendererComponent renderer)
     {
         Vector2 size = Vector2.Multiply(renderer.Size, transform.Scale);
         Rectangle rectangle = new(transform.Position.X + renderer.Offset.X, transform.Position.Y + renderer.Offset.Y, size.X, size.Y);
@@ -100,7 +100,7 @@ sealed class RectangleRenderHandler : RenderComponentHandler<RectangleRendererCo
 
 sealed class CircleRenderHandler : RenderComponentHandler<CircleRendererComponent>
 {
-    protected override void Draw(GameObject gameObject, in Transform2D transform, in CircleRendererComponent renderer)
+    protected override void Draw(GameObject gameObject, in Transform2D transform, CircleRendererComponent renderer)
     {
         Vector2 center = transform.Position + renderer.Offset;
         float scale = MathF.Max(MathF.Abs(transform.Scale.X), MathF.Abs(transform.Scale.Y));
@@ -118,7 +118,7 @@ sealed class CircleRenderHandler : RenderComponentHandler<CircleRendererComponen
 
 sealed class TextRenderHandler : RenderComponentHandler<TextRendererComponent>
 {
-    protected override void Draw(GameObject gameObject, in Transform2D transform, in TextRendererComponent renderer)
+    protected override void Draw(GameObject gameObject, in Transform2D transform, TextRendererComponent renderer)
     {
         Vector2 position = transform.Position + renderer.Offset;
         Raylib.DrawText(renderer.Text, (int)position.X, (int)position.Y, renderer.FontSize, Modulate(renderer.Color, gameObject.Modulate));

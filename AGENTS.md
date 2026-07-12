@@ -1,6 +1,6 @@
 # About me
 
-I am primarily a web developer and am using this Breakout project to learn game-engine and lower-level systems design. Explain unfamiliar engine concepts in plain language, connect them to familiar web-development ideas when useful, and do not assume I already know the usual patterns.
+I am primarily a web developer (typescript, react, python) and am using this Breakout project to learn game-engine (on top of light abstractions like Raylib) and lower-level (with C#, eventually C++) systems design. Explain unfamiliar engine concepts in plain language, connect them to familiar web-development ideas when useful, and do not assume I already know the usual language or technical patterns.
 
 I value simple, readable code, but I care about deliberate extensibility when it supports a real direction for the project. Challenge unnecessary complexity, explain the trade-off rather than treating simplification as automatically correct, and help me understand decisions instead of only applying them.
 

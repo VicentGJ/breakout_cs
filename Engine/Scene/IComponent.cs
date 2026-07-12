@@ -1,5 +1,0 @@
-namespace Breakout;
-
-interface IComponent
-{
-}

@@ -1,6 +1,6 @@
 namespace Breakout;
 
-struct BrickComponent : IComponent
+sealed class BrickComponent : Component
 {
     public int Points;
 }

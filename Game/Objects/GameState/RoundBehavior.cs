@@ -2,7 +2,7 @@ using System.Numerics;
 
 namespace Breakout;
 
-sealed class RoundBehavior : BehaviorComponent
+sealed class RoundBehavior : Component, IStartable, IUpdatable
 {
     private readonly LevelBuilder _levelBuilder = new();
     private readonly GameObject _paddle;
@@ -30,12 +30,12 @@ sealed class RoundBehavior : BehaviorComponent
         _brickDestroyedSubscription?.Dispose();
     }
 
-    protected override void OnStart()
+    public void Start()
     {
         StartNewGame();
     }
 
-    public override void Update(float dt)
+    public void Update(float dt)
     {
         BreakoutScene scene = (BreakoutScene)Scene;
 
@@ -83,7 +83,6 @@ sealed class RoundBehavior : BehaviorComponent
         ball.PreviousPosition = Vector2.Zero;
         ball.Velocity = Vector2.Zero;
         _ballObject.Transform2D = ballTransform;
-        _ballObject.Set(ball);
     }
 
     private void OnBallOutOfBounds(BallOutOfBoundsEvent evt)

@@ -1,6 +1,6 @@
 namespace Breakout;
 
-abstract class BehaviorComponent : IComponent
+abstract class Component
 {
     private bool _started;
 
@@ -25,15 +25,15 @@ abstract class BehaviorComponent : IComponent
         Scene = null!;
     }
 
-    internal void Start()
+    internal bool TryStart()
     {
         if (_started)
         {
-            return;
+            return false;
         }
 
         _started = true;
-        OnStart();
+        return true;
     }
 
     protected virtual void OnAttach()
@@ -44,15 +44,19 @@ abstract class BehaviorComponent : IComponent
     {
     }
 
-    protected virtual void OnStart()
-    {
-    }
+}
 
-    public virtual void Update(float dt)
-    {
-    }
+interface IStartable
+{
+    void Start();
+}
 
-    public virtual void PhysicsUpdate(float dt)
-    {
-    }
+interface IUpdatable
+{
+    void Update(float dt);
+}
+
+interface IPhysicsUpdatable
+{
+    void PhysicsUpdate(float dt);
 }

@@ -56,13 +56,13 @@ sealed class Application
     private void Update()
     {
         ActiveScene.Update(Time.DeltaTime);
-        ActiveScene.UpdateBehaviors(Time.DeltaTime);
+        ActiveScene.UpdateComponents(Time.DeltaTime);
     }
 
     private void PhysicsUpdate()
     {
         ActiveScene.PhysicsUpdate(Time.DeltaTime);
-        ActiveScene.PhysicsUpdateBehaviors(Time.DeltaTime);
+        ActiveScene.PhysicsUpdateComponents(Time.DeltaTime);
     }
 
     private void Draw()

@@ -3,6 +3,7 @@ namespace Breakout;
 abstract class Scene
 {
     private readonly List<GameObject> _objects = [];
+    private readonly List<DispatchEntry> _dispatchEntries = [];
     private int _nextGameObjectId = 1;
     private bool _setupComplete;
 
@@ -45,14 +46,14 @@ abstract class Scene
         }
     }
 
-    internal void UpdateBehaviors(float dt)
+    internal void UpdateComponents(float dt)
     {
-        DispatchBehaviors(dt, physicsPhase: false);
+        DispatchComponents(dt, physicsPhase: false);
     }
 
-    internal void PhysicsUpdateBehaviors(float dt)
+    internal void PhysicsUpdateComponents(float dt)
     {
-        DispatchBehaviors(dt, physicsPhase: true);
+        DispatchComponents(dt, physicsPhase: true);
     }
 
     internal void SetupOnce()
@@ -66,39 +67,48 @@ abstract class Scene
         Setup();
     }
 
-    private void DispatchBehaviors(float dt, bool physicsPhase)
+    private void DispatchComponents(float dt, bool physicsPhase)
     {
-        for (int objectIndex = 0; objectIndex < _objects.Count; objectIndex++)
-        {
-            GameObject gameObject = _objects[objectIndex];
+        _dispatchEntries.Clear();
 
+        foreach (GameObject gameObject in _objects)
+        {
             if (!gameObject.Active)
             {
                 continue;
             }
 
-            IReadOnlyList<BehaviorComponent> behaviors = gameObject.Behaviors;
-
-            for (int behaviorIndex = 0; behaviorIndex < behaviors.Count; behaviorIndex++)
+            foreach (Component component in gameObject.Components)
             {
-                BehaviorComponent behavior = behaviors[behaviorIndex];
+                _dispatchEntries.Add(new DispatchEntry(gameObject, component));
+            }
+        }
 
-                if (!behavior.Enabled)
-                {
-                    continue;
-                }
+        foreach (DispatchEntry entry in _dispatchEntries)
+        {
+            if (!entry.GameObject.Active || !entry.Component.Enabled)
+            {
+                continue;
+            }
 
-                behavior.Start();
+            if (!physicsPhase && entry.Component is IStartable startable && entry.Component.TryStart())
+            {
+                startable.Start();
+            }
 
-                if (physicsPhase)
+            if (physicsPhase)
+            {
+                if (entry.Component is IPhysicsUpdatable physicsUpdatable)
                 {
-                    behavior.PhysicsUpdate(dt);
+                    physicsUpdatable.PhysicsUpdate(dt);
                 }
-                else
-                {
-                    behavior.Update(dt);
-                }
+            }
+            else if (entry.Component is IUpdatable updatable)
+            {
+                updatable.Update(dt);
             }
         }
     }
+
+    private readonly record struct DispatchEntry(GameObject GameObject, Component Component);
 }

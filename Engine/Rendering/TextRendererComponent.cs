@@ -3,14 +3,10 @@ using Raylib_cs;
 
 namespace Breakout;
 
-struct TextRendererComponent : IComponent
+sealed class TextRendererComponent : Component
 {
     public string Text = string.Empty;
     public int FontSize = 16;
     public Vector2 Offset = Vector2.Zero;
     public Color Color = Color.White;
-
-    public TextRendererComponent()
-    {
-    }
 }

@@ -2,7 +2,7 @@ using System.Numerics;
 
 namespace Breakout;
 
-struct BallComponent : IComponent
+sealed class BallComponent : Component
 {
     public Vector2 PreviousPosition;
     public Vector2 Velocity;

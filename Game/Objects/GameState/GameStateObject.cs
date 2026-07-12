@@ -11,6 +11,6 @@ static class GameStateObject
 
     public static void AddRoundBehavior(GameObject gameObject, GameObject paddle, GameObject ball, List<GameObject> bricks)
     {
-        gameObject.AddBehavior(new RoundBehavior(paddle, ball, bricks));
+        gameObject.Add(new RoundBehavior(paddle, ball, bricks));
     }
 }

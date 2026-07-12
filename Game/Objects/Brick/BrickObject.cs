@@ -19,7 +19,7 @@ static class BrickObject
             StrokeColor = BreakoutTheme.BackgroundColor
         });
         gameObject.Add(new BoxColliderComponent { Size = size });
-        gameObject.AddBehavior(new BrickBehavior());
+        gameObject.Add(new BrickBehavior());
 
         scene.AddObject(gameObject);
         return gameObject;

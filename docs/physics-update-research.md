@@ -27,12 +27,12 @@ Program
       -> active Scene
           -> scene hooks
           -> GameObjects
-              -> BehaviorComponents
+              -> Components
 ```
 
-For each frame, `Application` updates time, calls the scene update hook, dispatches behavior `Update`, calls the scene physics hook, dispatches behavior `PhysicsUpdate`, and draws the scene. It does not know Breakout gameplay types or interpret gameplay events.
+For each frame, `Application` updates time, calls the scene update hook, dispatches lifecycle component `Update`, calls the scene physics hook, dispatches lifecycle component `PhysicsUpdate`, and draws the scene. It does not know Breakout gameplay types or interpret gameplay events.
 
-`Scene` owns object membership and scene-scoped events. `BreakoutScene` supplies Breakout context, input polling, and rendering. Behavior components own paddle movement, ball motion, collision response, and round flow.
+`Scene` owns object membership and scene-scoped events. `BreakoutScene` supplies Breakout context, input polling, and rendering. Lifecycle components own paddle movement, ball motion, collision response, and round flow.
 
 ## Physics Boundary
 

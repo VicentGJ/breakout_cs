@@ -2,12 +2,12 @@ using System.Numerics;
 
 namespace Breakout;
 
-struct BoxColliderComponent : IComponent
+sealed class BoxColliderComponent : Component
 {
     public Vector2 Size;
 
-    public Collision GetCollision(in BoxColliderComponent other, in Transform2D selfTransform, in Transform2D otherTransform)
+    public Collision GetCollision(BoxColliderComponent other, in Transform2D selfTransform, in Transform2D otherTransform)
     {
-        return BoxCollision.GetCollision(in this, in other, in selfTransform, in otherTransform);
+        return BoxCollision.GetCollision(this, other, in selfTransform, in otherTransform);
     }
 }

@@ -1,6 +1,6 @@
 namespace Breakout;
 
-struct PaddleComponent : IComponent
+sealed class PaddleComponent : Component
 {
     public float Speed;
 }

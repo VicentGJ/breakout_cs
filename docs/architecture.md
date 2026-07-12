@@ -6,33 +6,33 @@ This codebase is split into a small engine layer and a Breakout-specific game la
 
 The core execution shape is now:
 
-`Program -> Application -> Scene -> GameObjects -> BehaviorComponents`
+`Program -> Application -> Scene -> GameObjects -> Components`
 
-`Application` owns the Raylib window loop, active scene, runtime time state, and frame phase ordering. It does not know Breakout systems or concrete gameplay behavior types. `Scene` owns objects and events. `GameObject` owns passive data components and active behavior components. Behavior components own object-local gameplay logic and communicate scene-level facts through typed events.
+`Application` owns the Raylib window loop, active scene, runtime time state, and frame phase ordering. It does not know Breakout systems or concrete gameplay component types. `Scene` owns objects and events. `GameObject` owns components. Every component inherits `Component`; game components own object-local logic and communicate scene-level facts through typed events.
 
 ## Process Model
 
 Execution starts in `Program.cs`, which creates a `BreakoutScene` with the window dimensions and passes it into `Application`. `Application` is the outer loop wrapper around Raylib. It opens the window, sets the target FPS, owns `RuntimeTime` and the active scene, and runs a four-stage frame cycle: `BeginFrame`, `Update`, `PhysicsUpdate`, and `Draw`.
 
-Each frame `Application` updates time, calls the scene hook, dispatches behavior `Update`, calls the scene physics hook, dispatches behavior `PhysicsUpdate`, and then asks the scene to draw. It does not poll Breakout input, reset rounds, handle collisions, score bricks, or inspect game phases. Runtime-adjacent infrastructure such as `EventBus` still lives under `Engine/Runtime`.
+Each frame `Application` updates time, calls the scene hook, dispatches `IUpdatable` components, calls the scene physics hook, dispatches `IPhysicsUpdatable` components, and then asks the scene to draw. It does not poll Breakout input, reset rounds, handle collisions, score bricks, or inspect game phases. Runtime-adjacent infrastructure such as `EventBus` still lives under `Engine/Runtime`.
 
-`BreakoutScene` polls input in its scene update hook, clears the frame background, invokes the generic `RenderSystem`, and exposes Breakout state used by behaviors. Gameplay phase gates now live inside behavior components.
+`BreakoutScene` polls input in its scene update hook, clears the frame background, invokes the generic `RenderSystem`, and exposes Breakout state used by game components. Gameplay phase gates live inside those components.
 
 ## Scene, Object, And Behavior Model
 
-`Scene` is the base container for world objects. It owns object membership, assigns IDs, exposes a scene-scoped `EventBus`, and dispatches behavior lifecycle hooks. Objects are added with `AddObject`.
+`Scene` is the base container for world objects. It owns object membership, assigns IDs, exposes a scene-scoped `EventBus`, and dispatches component lifecycle hooks. Objects are added with `AddObject`.
 
-`GameObject` is the unit of composition. It stores a name, ID, active flag, `Transform2D`, passive data components, and behavior components. Passive components are structs keyed by component type and accessed with `Add`, `Set`, `Has`, `Get`, and `TryGet`.
+`GameObject` is the unit of composition. It stores a name, ID, active flag, `Transform2D`, and one component of each type. All components inherit `Component` and use the same `Add`, `Has`, `Get`, and `TryGet` API. Components are reference objects, so changes to retrieved component data apply directly.
 
-`BehaviorComponent` is the executable component base. It is a class with reference semantics, an `Enabled` flag, and owner/scene references assigned on attachment. The lifecycle is deterministic:
+`Component` is the common component base. It is a class with an `Enabled` flag and owner/scene references assigned on attachment. The lifecycle is deterministic:
 
-1. `OnAttach` when the behavior joins a scene-owned object.
-2. `OnStart` once before the first phase callback.
-3. `Update(float dt)` during normal frame logic.
-4. `PhysicsUpdate(float dt)` during physics-phase logic.
+1. `OnAttach` when the component joins a scene-owned object.
+2. `IStartable.Start()` once during the next normal update phase, when implemented.
+3. `IUpdatable.Update(float dt)` during normal frame logic, when implemented.
+4. `IPhysicsUpdatable.PhysicsUpdate(float dt)` during physics-phase logic, when implemented.
 5. `OnDetach` when the object leaves the scene.
 
-Objects keep passive data and behaviors in separate storage. Inactive objects do not run behaviors. Disabled behaviors do not run even when the owner object is active.
+`IStartable`, `IUpdatable`, and `IPhysicsUpdatable` opt a component into the corresponding lifecycle or frame phase. Inactive objects do not run these interfaces. Disabled components do not run even when the owner object is active.
 
 ## Event Bus
 
@@ -85,7 +85,7 @@ Game event definitions live under `Game/Runtime`, beside other game flow primiti
 
 ## Data And Tuning
 
-Game tuning lives in `BreakoutRules`. Visual tuning lives in `BreakoutTheme`. Behavior components use these constants directly instead of scattering magic numbers through gameplay code.
+Game tuning lives in `BreakoutRules`. Visual tuning lives in `BreakoutTheme`. Game components use these constants directly instead of scattering magic numbers through gameplay code.
 
 ## Current Boundaries
 

@@ -3,7 +3,7 @@ using Raylib_cs;
 
 namespace Breakout;
 
-sealed class BallBehavior : BehaviorComponent
+sealed class BallBehavior : Component, IUpdatable, IPhysicsUpdatable
 {
     private readonly GameObject _paddle;
     private readonly IReadOnlyList<GameObject> _bricks;
@@ -14,7 +14,7 @@ sealed class BallBehavior : BehaviorComponent
         _bricks = bricks;
     }
 
-    public override void Update(float dt)
+    public void Update(float dt)
     {
         BreakoutScene scene = (BreakoutScene)Scene;
 
@@ -31,7 +31,7 @@ sealed class BallBehavior : BehaviorComponent
         }
     }
 
-    public override void PhysicsUpdate(float dt)
+    public void PhysicsUpdate(float dt)
     {
         BreakoutScene scene = (BreakoutScene)Scene;
 
@@ -62,7 +62,6 @@ sealed class BallBehavior : BehaviorComponent
         ball.Velocity = Vector2.Zero;
 
         Owner.Transform2D = ballTransform;
-        Owner.Set(ball);
     }
 
     private void Launch(BreakoutScene scene)
@@ -70,7 +69,6 @@ sealed class BallBehavior : BehaviorComponent
         float horizontalDirection = Raylib.GetRandomValue(0, 1) == 0 ? -0.65f : 0.65f;
         BallComponent ball = Owner.Get<BallComponent>();
         ball.Velocity = Vector2.Normalize(new Vector2(horizontalDirection, -1f)) * BreakoutRules.BallSpeed;
-        Owner.Set(ball);
         scene.Phase = GamePhase.Playing;
         Scene.Events.Publish(new BallLaunchedEvent(Owner));
     }
@@ -84,7 +82,6 @@ sealed class BallBehavior : BehaviorComponent
         transform.Position += ball.Velocity * dt;
 
         Owner.Transform2D = transform;
-        Owner.Set(ball);
     }
 
     private void ResolveWallCollisions(BreakoutScene scene)
@@ -112,7 +109,6 @@ sealed class BallBehavior : BehaviorComponent
         }
 
         Owner.Transform2D = ballTransform;
-        Owner.Set(ball);
     }
 
     private void ResolvePaddleCollision()
@@ -137,7 +133,6 @@ sealed class BallBehavior : BehaviorComponent
         ball.Velocity = Vector2.Normalize(new Vector2(bounceX, -1f)) * BreakoutRules.BallSpeed;
 
         Owner.Transform2D = ballTransform;
-        Owner.Set(ball);
     }
 
     private void ResolveBrickCollision()
@@ -160,7 +155,7 @@ sealed class BallBehavior : BehaviorComponent
                 continue;
             }
 
-            brickObject.GetBehavior<BrickBehavior>().DestroyBrick();
+            brickObject.Get<BrickBehavior>().DestroyBrick();
             BounceBall(collision);
             break;
         }
@@ -183,7 +178,6 @@ sealed class BallBehavior : BehaviorComponent
         }
 
         Owner.Transform2D = ballTransform;
-        Owner.Set(ball);
     }
 
     private void PublishOutOfBounds(BreakoutScene scene)

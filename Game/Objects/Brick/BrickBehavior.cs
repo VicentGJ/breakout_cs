@@ -1,6 +1,6 @@
 namespace Breakout;
 
-sealed class BrickBehavior : BehaviorComponent
+sealed class BrickBehavior : Component
 {
     public void DestroyBrick()
     {

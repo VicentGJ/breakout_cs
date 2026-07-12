@@ -45,7 +45,7 @@ abstract class Scene
 
 `Application` installs scenes through `ChangeScene`, which calls `Setup()` exactly once per scene instance. The constructor uses the same path.
 
-Setup is for initial object graph creation only. It should create objects, attach components, attach behaviors, and build initial content. It should not run per-frame logic.
+Setup is for initial object graph creation only. It should create objects, attach components, and build initial content. It should not run per-frame logic.
 
 `BreakoutScene.Setup()` should create the initial Breakout graph in dependency order:
 
@@ -75,7 +75,7 @@ GameStateObject.AddRoundBehavior(gameState, paddle, ball, bricks);
 `BallBehavior` should receive its dependencies through its constructor.
 
 ```csharp
-sealed class BallBehavior : BehaviorComponent
+sealed class BallBehavior : Component
 {
     private readonly GameObject _paddle;
     private readonly IReadOnlyList<GameObject> _bricks;
@@ -198,7 +198,7 @@ Object recipe classes should stay grouped by object type:
 - `Game/Objects/Presentation/PresentationObjects.cs`
 - `Game/Objects/GameState/GameStateObject.cs`
 
-Data structs keep `*Component` names because they are still components.
+Data components keep `*Component` names even though they are reference objects.
 
 Use a plain `List<GameObject>` for the brick group until the wall needs real behavior or state.
 

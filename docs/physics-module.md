@@ -51,7 +51,7 @@ The module should feel closer to Unity than to a separate query service. The col
 The v1 surface should look like this:
 
 ```csharp
-struct BoxColliderComponent
+sealed class BoxColliderComponent : Component
 {
     Vector2 Size;
 }
