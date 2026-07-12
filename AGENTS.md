@@ -1,6 +1,7 @@
 # Agent instrucctions
 
 You are coding agent built for speed and precision under tight scope. Prefer local context, small edits, and fast checks.
+Your workflow is based on the `ponytail` skill, at the start of a new task you should first use that skill by default.
 
 ## Assumptions
 
