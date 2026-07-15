@@ -34,6 +34,7 @@ sealed class Application(int windowWidth, int windowHeight, string title, Scene 
         }
         finally
         {
+            _renderSystem.Dispose();
             _audioSystem?.Dispose();
             _audioSystem = null;
             Raylib.CloseWindow();
