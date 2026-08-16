@@ -4,7 +4,6 @@ namespace Breakout;
 
 sealed class RoundBehavior(GameObject paddle, GameObject ballObject, List<GameObject> bricks) : Component, IStartable, IUpdatable
 {
-    private readonly LevelBuilder _levelBuilder = new();
     private IDisposable? _ballOutOfBoundsSubscription;
     private IDisposable? _brickDestroyedSubscription;
 
@@ -40,8 +39,26 @@ sealed class RoundBehavior(GameObject paddle, GameObject ballObject, List<GameOb
         BreakoutScene scene = (BreakoutScene)Scene;
         scene.Score = 0;
         scene.Lives = BreakoutRules.StartingLives;
-        scene.BricksRemaining = _levelBuilder.Build(scene, bricks);
+        RebuildBrickWall(scene);
         ResetRound();
+    }
+
+    private void RebuildBrickWall(BreakoutScene scene)
+    {
+        foreach (GameObject brick in bricks)
+        {
+            Scene.RemoveObject(brick);
+        }
+
+        bricks.Clear();
+
+        foreach (GameObject brick in BrickWallObjects.Create(scene.Arena))
+        {
+            Scene.AddObject(brick);
+            bricks.Add(brick);
+        }
+
+        scene.BricksRemaining = bricks.Count;
     }
 
     private void ResetRound()

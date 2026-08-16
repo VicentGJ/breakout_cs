@@ -4,7 +4,7 @@ namespace Breakout;
 
 static class PaddleObject
 {
-    public static GameObject Create(Scene scene)
+    public static GameObject Create()
     {
         GameObject gameObject = new("Paddle");
         gameObject.ZIndex = 20;
@@ -13,7 +13,6 @@ static class PaddleObject
         gameObject.Add(new BoxColliderComponent { Size = BreakoutRules.PaddleSize });
         gameObject.Add(new PaddleBehavior());
 
-        scene.AddObject(gameObject);
         return gameObject;
     }
 }

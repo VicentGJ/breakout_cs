@@ -69,9 +69,9 @@ Game object modules live under `Game/Objects/<ObjectName>/`. Each module keeps t
 
 Game event definitions live under `Game/Runtime`, beside other game flow primitives rather than in a standalone events module.
 
-`BreakoutScene` stores screen dimensions, arena rectangle, input snapshot, phase, score, lives, and remaining brick count. Its setup method creates a dedicated `GameState` object with `RoundBehavior`, then wires paddle, ball, and the shared brick list directly into the behaviors that need them.
+`BreakoutScene` stores screen dimensions, arena rectangle, input snapshot, phase, score, lives, and remaining brick count. Its setup method constructs a dedicated `GameState` object, paddle, ball, and presentation graph; wires their dependencies; then explicitly inserts the completed objects in lifecycle order.
 
-`RoundBehavior` owns round and game-state flow. On start it creates a new game through `LevelBuilder`, resets its wired paddle and ball references, and enters serving phase. It subscribes to brick and ball events. Brick destruction updates score and win state. Ball out-of-bounds reduces lives, resets the round, or enters lost state. In won/lost phases, confirm input starts a fresh game.
+`RoundBehavior` owns round and game-state flow. On start it requests unattached bricks from `BrickWallObjects`, replaces the old wall's scene membership, resets its wired paddle and ball references, and enters serving phase. It subscribes to brick and ball events. Brick destruction updates score and win state. Ball out-of-bounds reduces lives, resets the round, or enters lost state. In won/lost phases, confirm input starts a fresh game.
 
 `PaddleBehavior` owns paddle movement during serving and playing phases.
 
@@ -81,7 +81,7 @@ Game event definitions live under `Game/Runtime`, beside other game flow primiti
 
 `PresentationBehavior` owns HUD text updates, controls text alignment, and phase overlay visibility.
 
-`LevelBuilder` remains a content service. It clears old bricks, lays out the brick wall, creates brick objects, and records the remaining brick count.
+Object recipes construct components and return unattached objects. Single-object recipes such as `BallObject` and `BrickObject` have no scene dependency. Multi-object recipes such as `PresentationObjects` and `BrickWallObjects` return ordered collections. Scene setup or runtime behavior controls insertion and removal explicitly.
 
 ## Data And Tuning
 

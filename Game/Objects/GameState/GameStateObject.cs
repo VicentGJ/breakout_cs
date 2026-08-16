@@ -2,11 +2,9 @@ namespace Breakout;
 
 static class GameStateObject
 {
-    public static GameObject Create(Scene scene)
+    public static GameObject Create()
     {
-        GameObject gameObject = new("GameState");
-        scene.AddObject(gameObject);
-        return gameObject;
+        return new GameObject("GameState");
     }
 
     public static void AddRoundBehavior(GameObject gameObject, GameObject paddle, GameObject ball, List<GameObject> bricks)

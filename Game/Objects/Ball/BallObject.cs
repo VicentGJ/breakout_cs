@@ -5,7 +5,7 @@ namespace Breakout;
 
 static class BallObject
 {
-    public static GameObject Create(Scene scene, GameObject paddle, IReadOnlyList<GameObject> bricks)
+    public static GameObject Create(GameObject paddle, IReadOnlyList<GameObject> bricks)
     {
         GameObject gameObject = new("Ball");
         gameObject.ZIndex = 30;
@@ -18,7 +18,6 @@ static class BallObject
         });
         gameObject.Add(new BallBehavior(paddle, bricks));
 
-        scene.AddObject(gameObject);
         return gameObject;
     }
 }

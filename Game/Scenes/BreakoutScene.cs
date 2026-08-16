@@ -34,12 +34,20 @@ sealed class BreakoutScene : Scene
 
     public override void Setup()
     {
-        GameObject gameState = GameStateObject.Create(this);
         List<GameObject> bricks = [];
-        GameObject paddle = PaddleObject.Create(this);
-        GameObject ball = BallObject.Create(this, paddle, bricks);
+        GameObject gameState = GameStateObject.Create();
+        GameObject paddle = PaddleObject.Create();
+        GameObject ball = BallObject.Create(paddle, bricks);
         GameStateObject.AddRoundBehavior(gameState, paddle, ball, bricks);
-        PresentationObjects.Create(this);
+
+        AddObject(gameState);
+        AddObject(paddle);
+        AddObject(ball);
+
+        foreach (GameObject gameObject in PresentationObjects.Create(this))
+        {
+            AddObject(gameObject);
+        }
     }
 
     public override void Update(float dt)

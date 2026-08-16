@@ -19,6 +19,7 @@ The scene remains the generic owner of game objects. Game-specific relationships
 - Game objects are created during scene setup, not hidden inside unrelated runtime methods.
 - Behaviors receive direct references to objects or small collections they actually depend on.
 - Object recipes remain responsible for constructing objects and attaching components/behaviors.
+- Object recipes return unattached objects; orchestration code controls scene insertion order.
 - No broad scene lookup API as the main relationship mechanism.
 - No object registry that simply recreates scene coupling under another name.
 
@@ -49,7 +50,7 @@ Setup is for initial object graph creation only. It should create objects, attac
 
 `BreakoutScene.Setup()` should create the initial Breakout graph in dependency order:
 
-1. game state object shell, so its behavior runs first
+1. game state object, fully configured before insertion so its behavior runs first
 2. shared brick list
 3. paddle
 4. ball, wired to paddle and brick list
@@ -65,11 +66,15 @@ Use direct `GameObject` references when one object has a real, stable dependency
 Example: before launch, the ball needs the paddle position so it can stick to it. That is not accidental coupling; it is the rule of Breakout.
 
 ```csharp
-GameObject gameState = GameStateObject.Create(scene);
 List<GameObject> bricks = [];
-GameObject paddle = PaddleObject.Create(scene);
-GameObject ball = BallObject.Create(scene, paddle, bricks);
+GameObject gameState = GameStateObject.Create();
+GameObject paddle = PaddleObject.Create();
+GameObject ball = BallObject.Create(paddle, bricks);
 GameStateObject.AddRoundBehavior(gameState, paddle, ball, bricks);
+
+AddObject(gameState);
+AddObject(paddle);
+AddObject(ball);
 ```
 
 `BallBehavior` should receive its dependencies through its constructor.
@@ -99,8 +104,9 @@ A standalone `BrickWall` class would mostly be a named list right now. That adds
 ```csharp
 List<GameObject> bricks = [];
 
-GameObject ball = BallObject.Create(scene, paddle, bricks);
-GameObject gameState = GameStateObject.Create(scene, paddle, ball, bricks);
+GameObject ball = BallObject.Create(paddle, bricks);
+GameObject gameState = GameStateObject.Create();
+GameStateObject.AddRoundBehavior(gameState, paddle, ball, bricks);
 ```
 
 This keeps the real relationship visible:
@@ -110,12 +116,13 @@ This keeps the real relationship visible:
 - `BreakoutScene` does not own the list.
 - No extra wall abstraction exists until the wall earns behavior/state of its own.
 
-`LevelBuilder` should build into the shared brick list:
+`BrickWallObjects.Create` constructs a complete unattached wall from the arena bounds. `RoundBehavior` then:
 
-- clear old bricks
-- create new brick objects through `BrickObject.Create`
-- add them to `bricks`
-- return/count created bricks for `BricksRemaining`
+- removes old bricks from the scene
+- clears the shared list
+- inserts the newly constructed bricks
+- adds them to the same shared list instance
+- records the count in `BricksRemaining`
 
 ## Round Flow
 
@@ -124,18 +131,15 @@ This keeps the real relationship visible:
 It should receive the references it needs when the game state object is created:
 
 ```csharp
-GameObject gameState = GameStateObject.Create(
-    scene,
-    paddle,
-    ball,
-    bricks);
+GameObject gameState = GameStateObject.Create();
+GameStateObject.AddRoundBehavior(gameState, paddle, ball, bricks);
 ```
 
 `RoundBehavior` should:
 
 - start a new game
 - reset score/lives
-- clear and rebuild bricks through `LevelBuilder`
+- replace scene brick membership using objects returned by `BrickWallObjects`
 - reset paddle and ball from direct references
 - update score and remaining brick count from events
 
@@ -196,6 +200,7 @@ Object recipe classes should stay grouped by object type:
 - `Game/Objects/Paddle/PaddleObject.cs`
 - `Game/Objects/Ball/BallObject.cs`
 - `Game/Objects/Brick/BrickObject.cs`
+- `Game/Objects/Brick/BrickWallObjects.cs`
 - `Game/Objects/Presentation/PresentationObjects.cs`
 - `Game/Objects/GameState/GameStateObject.cs`
 
@@ -217,7 +222,7 @@ Promoting the brick list into a `BrickWall` object may make sense later if the w
 
 ## Implementation Status
 
-This design is implemented. `BreakoutScene.Setup()` creates the game-state object, shared brick list, paddle, ball, and presentation objects. `BallBehavior` and `RoundBehavior` receive their required references during setup, and `LevelBuilder` builds into the shared list.
+This design is implemented. Object recipes return unattached objects. `BreakoutScene.Setup()` constructs and wires the initial graph, then explicitly inserts it in lifecycle order. `BallBehavior` and `RoundBehavior` receive their required references during setup. For a new game, `BrickWallObjects` constructs an unattached wall and `RoundBehavior` replaces scene membership while preserving the shared brick-list instance.
 
 ## Verification
 
@@ -242,7 +247,3 @@ Manual runtime check:
 - brick collision destroys bricks
 - losing a life resets paddle and ball
 - win/loss restart still works
-
-## Open Questions
-
-- Should object recipes keep calling `scene.AddObject`, or should they eventually return unattached objects so setup controls object order directly?

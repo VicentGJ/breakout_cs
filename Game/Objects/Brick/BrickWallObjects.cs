@@ -1,22 +1,17 @@
 using System.Numerics;
+using Raylib_cs;
 
 namespace Breakout;
 
-sealed class LevelBuilder
+static class BrickWallObjects
 {
-    public int Build(BreakoutScene scene, List<GameObject> bricks)
+    public static IReadOnlyList<GameObject> Create(Rectangle arena)
     {
-        foreach (GameObject brick in bricks)
-        {
-            scene.RemoveObject(brick);
-        }
-
-        bricks.Clear();
-
+        List<GameObject> bricks = [];
         const float sidePadding = 16f;
-        float brickWidth = (scene.Arena.Width - sidePadding * 2f - BreakoutRules.BrickGap * (BreakoutRules.BrickColumns - 1)) / BreakoutRules.BrickColumns;
-        float startX = scene.Arena.X + sidePadding;
-        float startY = scene.Arena.Y + 28f;
+        float brickWidth = (arena.Width - sidePadding * 2f - BreakoutRules.BrickGap * (BreakoutRules.BrickColumns - 1)) / BreakoutRules.BrickColumns;
+        float startX = arena.X + sidePadding;
+        float startY = arena.Y + 28f;
 
         for (int row = 0; row < BreakoutRules.BrickRows; row++)
         {
@@ -26,17 +21,15 @@ sealed class LevelBuilder
                 float y = startY + row * (BreakoutRules.BrickHeight + BreakoutRules.BrickGap);
                 int points = (BreakoutRules.BrickRows - row) * 10;
 
-                GameObject brick = BrickObject.Create(
-                    scene,
+                bricks.Add(BrickObject.Create(
                     bricks.Count + 1,
                     new Vector2(x, y),
                     new Vector2(brickWidth, BreakoutRules.BrickHeight),
                     BreakoutTheme.BrickColors[row],
-                    points);
-                bricks.Add(brick);
+                    points));
             }
         }
 
-        return bricks.Count;
+        return bricks;
     }
 }

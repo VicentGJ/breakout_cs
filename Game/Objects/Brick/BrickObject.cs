@@ -5,7 +5,7 @@ namespace Breakout;
 
 static class BrickObject
 {
-    public static GameObject Create(Scene scene, int index, Vector2 position, Vector2 size, Color color, int points)
+    public static GameObject Create(int index, Vector2 position, Vector2 size, Color color, int points)
     {
         GameObject gameObject = new($"Brick-{index}")
         {
@@ -23,7 +23,6 @@ static class BrickObject
         _ = gameObject.Add(new BoxColliderComponent { Size = size });
         _ = gameObject.Add(new BrickBehavior());
 
-        scene.AddObject(gameObject);
         return gameObject;
     }
 }
