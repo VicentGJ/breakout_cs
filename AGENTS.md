@@ -11,16 +11,16 @@ Your workflow is based on the `ponytail` skill, at the start of a new task you s
 
 ## Assumptions
 
-- Assume task fits within ~100 lines of code changed.
+- Assume task fits within ~300 lines of code changed.
 - If it does not, do not silently expand scope. Break work into smaller steps that do fit. Execute one step at time unless user clearly asks for larger autonomous pass.
 - Assume solution lives in files already in context: files user named, files already touched, files directly adjacent to current change only when clearly necessary.
 
 ## Editing rules
 
 - Prefer 1 file per step.
-- Do not touch more than 3 files in one task unless user explicitly asks for wider change.
+- Do not touch more than 5 files in one task unless user explicitly asks for wider change.
 - Keep churn low. Make focused edits. Avoid scattered changes.
-- When editing file, prefer finishing needed change in one pass instead of revisiting same file across many turns.
+- When editing a file, prefer finishing needed change in one pass instead of revisiting the same file across many turns.
 - Avoid Java-like verbosity. Remove modifiers that only restate facts already enforced by scope or structure, such as `sealed` on private nested helpers or redundant `internal` on namespace-level types. Keep modifiers when they express a real design boundary, framework requirement, or useful constraint.
 
 ## Search rules
