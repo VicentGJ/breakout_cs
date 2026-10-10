@@ -1,16 +1,21 @@
+using System.Numerics;
 using Raylib_cs;
 
 namespace Breakout;
 
-sealed class GameObject(string name)
+class GameObject
 {
-    private readonly Dictionary<Type, Component> _components = [];
-    private readonly List<Component> _componentList = [];
-    private Scene? _scene;
+    private readonly List<GameObject> _children = [];
+    private bool _started;
+
+    public GameObject()
+    {
+        Name = GetType().Name;
+    }
 
     public int Id { get; private set; }
 
-    public string Name { get; } = name;
+    public string Name { get; set; }
 
     public bool Active { get; set; } = true;
 
@@ -20,74 +25,125 @@ sealed class GameObject(string name)
 
     public Color Modulate { get; set; } = Color.White;
 
+    // Local transform: relative to Parent. For root objects local == world.
     public Transform2D Transform2D { get; set; } = global::Breakout.Transform2D.Default;
 
-    public IReadOnlyList<Component> Components => _componentList;
+    public Scene Scene { get; private set; } = null!;
 
-    public T Add<T>(T component) where T : Component
+    public GameObject? Parent { get; private set; }
+
+    public IReadOnlyList<GameObject> Children => _children;
+
+    // Own flag AND every ancestor's flag.
+    public bool ActiveInHierarchy => Active && (Parent?.ActiveInHierarchy ?? true);
+
+    public bool VisibleInHierarchy => Visible && (Parent?.VisibleInHierarchy ?? true);
+
+    public T AddChild<T>(T child) where T : GameObject
     {
-        _components.Add(typeof(T), component);
-
-        _componentList.Add(component);
-
-        if (_scene is not null)
+        if (child.Parent is not null || child.Scene is not null)
         {
-            component.Attach(this, _scene);
+            throw new InvalidOperationException($"GameObject '{child.Name}' already has a parent or belongs to a scene.");
         }
 
-        return component;
-    }
-
-    public bool Has<T>() where T : Component
-    {
-        return _components.ContainsKey(typeof(T));
-    }
-
-    public T Get<T>() where T : Component
-    {
-        if (_components.TryGetValue(typeof(T), out Component? component))
+        for (GameObject? ancestor = this; ancestor is not null; ancestor = ancestor.Parent)
         {
-            return (T)component;
+            if (ancestor == child)
+            {
+                throw new InvalidOperationException($"GameObject '{child.Name}' cannot be its own ancestor.");
+            }
         }
 
-        throw new InvalidOperationException($"GameObject '{Name}' missing component '{typeof(T).Name}'.");
-    }
+        child.Parent = this;
+        _children.Add(child);
 
-    public bool TryGet<T>(out T component) where T : Component
-    {
-        if (_components.TryGetValue(typeof(T), out Component? value))
+        if (Scene is not null)
         {
-            component = (T)value;
-            return true;
+            Scene.Register(child);
         }
 
-        component = default!;
-        return false;
+        return child;
+    }
+
+    public Transform2D GetWorldTransform()
+    {
+        if (Parent is null)
+        {
+            return Transform2D;
+        }
+
+        Transform2D parent = Parent.GetWorldTransform();
+        Vector2 scaled = Transform2D.Position * parent.Scale;
+        float cos = MathF.Cos(parent.Rotation);
+        float sin = MathF.Sin(parent.Rotation);
+
+        return new Transform2D
+        {
+            Position = parent.Position + new Vector2(scaled.X * cos - scaled.Y * sin, scaled.X * sin + scaled.Y * cos),
+            Rotation = parent.Rotation + Transform2D.Rotation,
+            Scale = parent.Scale * Transform2D.Scale
+        };
+    }
+
+    // Lifecycle hooks. OnAttach/OnDetach touch only this object (and scene events).
+    // Start runs once at the beginning of the first update after the whole scene is loaded,
+    // so it may look at the rest of the world with Scene.Find.
+    protected virtual void OnAttach()
+    {
+    }
+
+    protected virtual void OnDetach()
+    {
+    }
+
+    public virtual void Start()
+    {
+    }
+
+    public virtual void Update(float dt)
+    {
+    }
+
+    public virtual void PhysicsUpdate(float dt)
+    {
+    }
+
+    internal virtual void Draw(RenderSystem renderer, in Transform2D world)
+    {
     }
 
     internal void AttachToScene(Scene scene)
     {
-        _scene = scene;
-
-        foreach (Component component in new List<Component>(_componentList))
-        {
-            component.Attach(this, scene);
-        }
+        Scene = scene;
+        OnAttach();
     }
 
     internal void DetachFromScene()
     {
-        _scene = null;
+        OnDetach();
+        _started = false;
+        Scene = null!;
+    }
 
-        foreach (Component component in new List<Component>(_componentList))
+    internal void Unlink()
+    {
+        Parent?._children.Remove(this);
+        Parent = null;
+    }
+
+    internal bool TryStart()
+    {
+        if (_started)
         {
-            component.Detach();
+            return false;
         }
+
+        _started = true;
+        return true;
     }
 
     internal void AssignId(int id)
     {
         Id = id;
     }
-
 }

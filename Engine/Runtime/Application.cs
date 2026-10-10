@@ -65,13 +65,13 @@ sealed class Application(int windowWidth, int windowHeight, string title, Scene 
     private void Update()
     {
         ActiveScene.Update(Time.DeltaTime);
-        ActiveScene.UpdateComponents(Time.DeltaTime);
+        ActiveScene.UpdateObjects(Time.DeltaTime);
     }
 
     private void PhysicsUpdate()
     {
         ActiveScene.PhysicsUpdate(Time.DeltaTime);
-        ActiveScene.PhysicsUpdateComponents(Time.DeltaTime);
+        ActiveScene.PhysicsUpdateObjects(Time.DeltaTime);
     }
 
     private void Draw()

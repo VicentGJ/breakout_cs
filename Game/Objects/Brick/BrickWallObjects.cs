@@ -5,11 +5,12 @@ namespace Breakout;
 
 static class BrickWallObjects
 {
-    public static IReadOnlyList<GameObject> Create(Rectangle arena)
+    public static IReadOnlyList<Brick> Create(Rectangle arena)
     {
-        List<GameObject> bricks = [];
+        List<Brick> bricks = [];
         const float sidePadding = 16f;
         float brickWidth = (arena.Width - sidePadding * 2f - BreakoutRules.BrickGap * (BreakoutRules.BrickColumns - 1)) / BreakoutRules.BrickColumns;
+        Vector2 size = new(brickWidth, BreakoutRules.BrickHeight);
         float startX = arena.X + sidePadding;
         float startY = arena.Y + 28f;
 
@@ -19,14 +20,19 @@ static class BrickWallObjects
             {
                 float x = startX + column * (brickWidth + BreakoutRules.BrickGap);
                 float y = startY + row * (BreakoutRules.BrickHeight + BreakoutRules.BrickGap);
-                int points = (BreakoutRules.BrickRows - row) * 10;
 
-                bricks.Add(BrickObject.Create(
-                    bricks.Count + 1,
-                    new Vector2(x, y),
-                    new Vector2(brickWidth, BreakoutRules.BrickHeight),
-                    BreakoutTheme.BrickColors[row],
-                    points));
+                Brick brick = new()
+                {
+                    Name = $"Brick-{bricks.Count + 1}",
+                    Transform2D = new Transform2D { Position = new Vector2(x, y) + size * 0.5f, Scale = Vector2.One },
+                    Points = (BreakoutRules.BrickRows - row) * 10
+                };
+                brick.Sprite.Size = size;
+                brick.Sprite.Origin = size * 0.5f;
+                brick.Sprite.Modulate = BreakoutTheme.BrickColors[row];
+                brick.Collider.Size = size;
+
+                bricks.Add(brick);
             }
         }
 

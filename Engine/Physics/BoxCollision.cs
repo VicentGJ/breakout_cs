@@ -4,7 +4,7 @@ namespace Breakout;
 
 static class BoxCollision
 {
-    public static Collision GetCollision(BoxColliderComponent self, BoxColliderComponent other, in Transform2D selfTransform, in Transform2D otherTransform)
+    public static Collision GetCollision(BoxCollider self, BoxCollider other, in Transform2D selfTransform, in Transform2D otherTransform)
     {
         Bounds selfBounds = GetBounds(self, in selfTransform);
         Bounds otherBounds = GetBounds(other, in otherTransform);
@@ -59,7 +59,7 @@ static class BoxCollision
         return new Collision { Normal = normalY, Distance = gapY, Point = ClosestPointOnPerimeter(selfBounds, otherBounds.Center) };
     }
 
-    private static Bounds GetBounds(BoxColliderComponent collider, in Transform2D transform)
+    private static Bounds GetBounds(BoxCollider collider, in Transform2D transform)
     {
         Vector2 size = collider.Size * transform.Scale;
         Vector2 half = Vector2.Abs(size) * 0.5f;

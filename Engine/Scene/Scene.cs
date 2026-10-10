@@ -5,7 +5,7 @@ namespace Breakout;
 abstract class Scene
 {
     private readonly List<GameObject> _objects = [];
-    private readonly List<DispatchEntry> _dispatchEntries = [];
+    private readonly List<GameObject> _dispatchList = [];
     private int _nextGameObjectId = 1;
     private bool _setupComplete;
 
@@ -13,6 +13,7 @@ abstract class Scene
 
     internal AudioSystem? Audio { get; private set; }
 
+    // Flat list of every object in the scene, children included (parents come before their children).
     public IReadOnlyList<GameObject> Objects => _objects;
 
     public Color BackgroundColor { get; set; } = Color.Black;
@@ -29,7 +30,57 @@ abstract class Scene
     {
     }
 
+    // Adds a root object together with its whole subtree.
     public void AddObject(GameObject gameObject)
+    {
+        if (gameObject.Parent is not null || gameObject.Scene is not null)
+        {
+            throw new InvalidOperationException($"GameObject '{gameObject.Name}' already has a parent or belongs to a scene.");
+        }
+
+        Register(gameObject);
+    }
+
+    // Removes an object together with its whole subtree.
+    public void RemoveObject(GameObject gameObject)
+    {
+        if (gameObject.Scene != this)
+        {
+            return;
+        }
+
+        gameObject.Unlink();
+        Unregister(gameObject);
+    }
+
+    // First object of type T, or null. Look up in Start, not in OnAttach.
+    public T? Find<T>() where T : GameObject
+    {
+        foreach (GameObject gameObject in _objects)
+        {
+            if (gameObject is T match)
+            {
+                return match;
+            }
+        }
+
+        return null;
+    }
+
+    // ponytail: linear scan, add a per-type index if scenes get big.
+    // Do not add or remove objects while enumerating; copy with ToList() first.
+    public IEnumerable<T> FindAll<T>() where T : GameObject
+    {
+        foreach (GameObject gameObject in _objects)
+        {
+            if (gameObject is T match)
+            {
+                yield return match;
+            }
+        }
+    }
+
+    internal void Register(GameObject gameObject)
     {
         if (gameObject.Id == 0)
         {
@@ -38,24 +89,50 @@ abstract class Scene
 
         _objects.Add(gameObject);
         gameObject.AttachToScene(this);
-    }
 
-    public void RemoveObject(GameObject gameObject)
-    {
-        if (_objects.Remove(gameObject))
+        for (int i = 0; i < gameObject.Children.Count; i++)
         {
-            gameObject.DetachFromScene();
+            GameObject child = gameObject.Children[i];
+
+            if (child.Scene is null)
+            {
+                Register(child);
+            }
         }
     }
 
-    internal void UpdateComponents(float dt)
+    internal void UpdateObjects(float dt)
     {
-        DispatchComponents(dt, physicsPhase: false);
+        Snapshot();
+
+        foreach (GameObject gameObject in _dispatchList)
+        {
+            if (IsLive(gameObject) && gameObject.TryStart())
+            {
+                gameObject.Start();
+            }
+        }
+
+        foreach (GameObject gameObject in _dispatchList)
+        {
+            if (IsLive(gameObject))
+            {
+                gameObject.Update(dt);
+            }
+        }
     }
 
-    internal void PhysicsUpdateComponents(float dt)
+    internal void PhysicsUpdateObjects(float dt)
     {
-        DispatchComponents(dt, physicsPhase: true);
+        Snapshot();
+
+        foreach (GameObject gameObject in _dispatchList)
+        {
+            if (IsLive(gameObject))
+            {
+                gameObject.PhysicsUpdate(dt);
+            }
+        }
     }
 
     internal void SetupOnce()
@@ -82,48 +159,35 @@ abstract class Scene
         }
     }
 
-    private void DispatchComponents(float dt, bool physicsPhase)
+    private void Unregister(GameObject gameObject)
     {
-        _dispatchEntries.Clear();
-
-        foreach (GameObject gameObject in _objects)
+        foreach (GameObject child in gameObject.Children)
         {
-            if (!gameObject.Active)
+            if (child.Scene == this)
             {
-                continue;
-            }
-
-            foreach (Component component in gameObject.Components)
-            {
-                _dispatchEntries.Add(new DispatchEntry(gameObject, component));
+                Unregister(child);
             }
         }
 
-        foreach (DispatchEntry entry in _dispatchEntries)
+        _objects.Remove(gameObject);
+        gameObject.DetachFromScene();
+    }
+
+    private void Snapshot()
+    {
+        _dispatchList.Clear();
+
+        foreach (GameObject gameObject in _objects)
         {
-            if (!entry.GameObject.Active || !entry.Component.Enabled)
+            if (gameObject.ActiveInHierarchy)
             {
-                continue;
-            }
-
-            if (!physicsPhase && entry.Component is IStartable startable && entry.Component.TryStart())
-            {
-                startable.Start();
-            }
-
-            if (physicsPhase)
-            {
-                if (entry.Component is IPhysicsUpdatable physicsUpdatable)
-                {
-                    physicsUpdatable.PhysicsUpdate(dt);
-                }
-            }
-            else if (entry.Component is IUpdatable updatable)
-            {
-                updatable.Update(dt);
+                _dispatchList.Add(gameObject);
             }
         }
     }
 
-    private readonly record struct DispatchEntry(GameObject GameObject, Component Component);
+    private bool IsLive(GameObject gameObject)
+    {
+        return gameObject.Scene == this && gameObject.ActiveInHierarchy;
+    }
 }

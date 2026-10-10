@@ -1,3 +1,4 @@
+using System.Numerics;
 using Raylib_cs;
 
 namespace Breakout;
@@ -18,14 +19,6 @@ sealed class BreakoutScene : Scene
 
     internal Rectangle Arena { get; }
 
-    internal GamePhase Phase { get; set; }
-
-    internal int Score { get; set; }
-
-    internal int Lives { get; set; }
-
-    internal int BricksRemaining { get; set; }
-
     internal InputState Input { get; private set; }
 
     internal float ArenaRight => Arena.X + Arena.Width;
@@ -34,20 +27,18 @@ sealed class BreakoutScene : Scene
 
     public override void Setup()
     {
-        List<GameObject> bricks = [];
-        GameObject gameState = GameStateObject.Create();
-        GameObject paddle = PaddleObject.Create();
-        GameObject ball = BallObject.Create(paddle, bricks);
-        GameStateObject.AddRoundBehavior(gameState, paddle, ball, bricks);
-
-        AddObject(gameState);
-        AddObject(paddle);
-        AddObject(ball);
-
-        foreach (GameObject gameObject in PresentationObjects.Create(this))
+        AddObject(new GameState());
+        AddObject(new Paddle());
+        AddObject(new Ball());
+        AddObject(new RectangleShape
         {
-            AddObject(gameObject);
-        }
+            Name = "Arena",
+            Transform2D = new Transform2D { Position = new Vector2(Arena.X, Arena.Y), Scale = Vector2.One },
+            Size = new Vector2(Arena.Width, Arena.Height),
+            FillColor = BreakoutTheme.ArenaColor,
+            StrokeColor = BreakoutTheme.BorderColor
+        });
+        AddObject(new Hud());
     }
 
     public override void Update(float dt)

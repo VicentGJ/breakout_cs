@@ -5,7 +5,7 @@ namespace Breakout;
 sealed class AudioSystem : IDisposable
 {
     private readonly Dictionary<string, Sound> _sounds = [];
-    private readonly Dictionary<AudioComponent, Sound> _voices = [];
+    private readonly Dictionary<AudioPlayer, Sound> _voices = [];
 
     public AudioSystem()
     {
@@ -41,54 +41,54 @@ sealed class AudioSystem : IDisposable
         return sound;
     }
 
-    public void Play(AudioComponent component)
+    public void Play(AudioPlayer player)
     {
-        if (!_voices.TryGetValue(component, out Sound voice))
+        if (!_voices.TryGetValue(player, out Sound voice))
         {
-            voice = Raylib.LoadSoundAlias(GetSound(component.AssetPath));
-            _voices.Add(component, voice);
+            voice = Raylib.LoadSoundAlias(GetSound(player.AssetPath));
+            _voices.Add(player, voice);
         }
 
         Raylib.StopSound(voice);
-        Raylib.SetSoundVolume(voice, component.Volume);
-        Raylib.SetSoundPitch(voice, component.Pitch);
+        Raylib.SetSoundVolume(voice, player.Volume);
+        Raylib.SetSoundPitch(voice, player.Pitch);
         Raylib.PlaySound(voice);
     }
 
-    public void Stop(AudioComponent component)
+    public void Stop(AudioPlayer player)
     {
-        if (_voices.TryGetValue(component, out Sound voice))
+        if (_voices.TryGetValue(player, out Sound voice))
         {
             Raylib.StopSound(voice);
         }
     }
 
-    public bool IsPlaying(AudioComponent component)
+    public bool IsPlaying(AudioPlayer player)
     {
-        return _voices.TryGetValue(component, out Sound voice) && Raylib.IsSoundPlaying(voice);
+        return _voices.TryGetValue(player, out Sound voice) && Raylib.IsSoundPlaying(voice);
     }
 
     public void StopScene(Scene scene)
     {
-        List<AudioComponent> components = [];
+        List<AudioPlayer> players = [];
 
-        foreach (AudioComponent component in _voices.Keys)
+        foreach (AudioPlayer player in _voices.Keys)
         {
-            if (component.Scene == scene)
+            if (player.Scene == scene)
             {
-                components.Add(component);
+                players.Add(player);
             }
         }
 
-        foreach (AudioComponent component in components)
+        foreach (AudioPlayer player in players)
         {
-            Release(component);
+            Release(player);
         }
     }
 
-    internal void Release(AudioComponent component)
+    internal void Release(AudioPlayer player)
     {
-        if (_voices.Remove(component, out Sound voice))
+        if (_voices.Remove(player, out Sound voice))
         {
             Raylib.StopSound(voice);
             Raylib.UnloadSoundAlias(voice);

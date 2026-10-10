@@ -1,6 +1,6 @@
 namespace Breakout;
 
-sealed class AudioComponent : Component
+sealed class AudioPlayer : GameObject
 {
     public string AssetPath { get; init; } = null!;
 

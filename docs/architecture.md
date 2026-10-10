@@ -2,93 +2,90 @@
 
 ## Overview
 
-This codebase is split into a small engine layer and a Breakout-specific game layer. The engine layer lives under `Engine/` and provides the application loop, scene and object model, generic component storage, object-owned behavior lifecycle, a scene-scoped event bus, rendering components, and box-collision utilities. The game layer lives under `Game/` and contains Breakout rules, content tuning, gameplay object modules, scene bootstrap, and final renderer composition.
+This codebase is split into a small engine layer and a Breakout-specific game layer. The engine layer lives under `Engine/` and provides the application loop, the scene and object tree, a scene-scoped event bus, drawable objects, a box collider, and an audio player. The game layer lives under `Game/` and contains Breakout rules, content tuning, gameplay object classes, and scene bootstrap.
 
-The core execution shape is now:
+The core execution shape is:
 
-`Program -> Application -> active Scene -> GameObjects -> Components`
+`Program -> Application -> active Scene -> GameObject tree`
 
-`Application` owns the Raylib window loop, active scene, runtime time state, frame phase ordering, and generic render execution. It does not know Breakout systems or concrete gameplay component types. `Scene` owns objects, background configuration, and events. `GameObject` owns components. Every component inherits `Component`; game components own object-local logic and communicate scene-level facts through typed events.
+`Application` owns the Raylib window loop, active scene, runtime time state, frame phase ordering, and generic render execution. It does not know Breakout types. `Scene` owns objects, background configuration, and events. Every object inherits `GameObject`; game classes own their logic and communicate scene-level facts through typed events.
 
 ## Process Model
 
-Execution starts in `Program.cs`, which creates a `BreakoutScene` with the window dimensions and passes it into `Application`. `Application` is the outer loop wrapper around Raylib. It opens the window, sets the target FPS, owns `RuntimeTime` and the active scene, and runs a four-stage frame cycle: `BeginFrame`, `Update`, `PhysicsUpdate`, and `Draw`.
+Execution starts in `Program.cs`, which creates a `BreakoutScene` with the window dimensions and passes it into `Application`. `Application` opens the window, sets the target FPS, owns `RuntimeTime` and the active scene, and runs a four-stage frame cycle: `BeginFrame`, `Update`, `PhysicsUpdate`, and `Draw`.
 
-Each frame `Application` updates time, calls the scene hook, dispatches `IUpdatable` components, calls the scene physics hook, dispatches `IPhysicsUpdatable` components, clears the scene background, and calls `RenderSystem.Draw(ActiveScene.Objects)`. It does not poll Breakout input, reset rounds, handle collisions, score bricks, or inspect game phases. Runtime-adjacent infrastructure such as `EventBus` still lives under `Engine/Runtime`.
+Each frame `Application` updates time, calls the scene hook, runs `Start`/`Update` on scene objects, calls the scene physics hook, runs `PhysicsUpdate` on scene objects, clears the scene background, and calls `RenderSystem.Draw(ActiveScene.Objects)`. It does not poll Breakout input, reset rounds, handle collisions, or inspect game phases.
 
-`BreakoutScene` sets its background color, polls input in its scene update hook, and exposes Breakout state used by game components. Gameplay phase gates live inside those components. It has no Breakout-specific draw hook.
+`BreakoutScene` sets its background color, polls input in its scene update hook, and exposes Breakout context (screen size, arena, input) used by game objects.
 
-## Scene, Object, And Behavior Model
+## Object Model
 
-`Scene` is the base container for world objects. It owns object membership, assigns IDs, exposes a scene-scoped `EventBus`, and dispatches component lifecycle hooks. Objects are added with `AddObject`.
+The model is Godot-style: typed subclasses of one base class, with reuse coming from children in a tree instead of attached components.
 
-`GameObject` is the unit of composition. It stores a name, ID, active flag, `Transform2D`, and one component of each type. All components inherit `Component` and use the same `Add`, `Has`, `Get`, and `TryGet` API. Components are reference objects, so changes to retrieved component data apply directly.
+`GameObject` is the base class. It stores a name, ID, `Active`, `Visible`, `ZIndex`, `Modulate`, a local `Transform2D`, a `Parent`, and a list of `Children`. It has virtual hooks: `OnAttach`, `OnDetach`, `Start`, `Update`, `PhysicsUpdate`, and an internal `Draw`.
 
-`Component` is the common component base. It is a class with an `Enabled` flag and owner/scene references assigned on attachment. The lifecycle is deterministic:
+Engine object types:
 
-1. `OnAttach` when the component joins a scene-owned object.
-2. `IStartable.Start()` once during the next normal update phase, when implemented.
-3. `IUpdatable.Update(float dt)` during normal frame logic, when implemented.
-4. `IPhysicsUpdatable.PhysicsUpdate(float dt)` during physics-phase logic, when implemented.
-5. `OnDetach` when the object leaves the scene.
+- `Sprite`, `Label`, `RectangleShape`, `CircleShape` draw themselves.
+- `BoxCollider` is a collision box.
+- `AudioPlayer` plays a sound.
 
-`IStartable`, `IUpdatable`, and `IPhysicsUpdatable` opt a component into the corresponding lifecycle or frame phase. Inactive objects do not run these interfaces. Disabled components do not run even when the owner object is active.
+Game object types combine them as children. `Paddle` is a `GameObject` with a `RectangleShape` child and a `BoxCollider` child. `Ball` has a `CircleShape`, a `BoxCollider`, and an `AudioPlayer`. `Brick` has a `Sprite` and a `BoxCollider`. An empty `GameObject` with children is a group.
+
+### Hierarchy
+
+- `Transform2D` is local, relative to the parent. For root objects local equals world. `GetWorldTransform()` composes position, rotation, and scale through the ancestors. Rendering and collision use world transforms.
+- `Active` and `Visible` are inherited: `ActiveInHierarchy` and `VisibleInHierarchy` are the object's own flag AND every ancestor's.
+- `Scene.AddObject` adds a root with its whole subtree; `AddChild` on an attached parent registers the child too. `Scene.RemoveObject` removes the object with its whole subtree and runs `OnDetach` for each. The scene keeps one flat `Objects` list with parents before children.
+- Not implemented yet: reparenting, preserving world position on reparent.
+
+### Lifecycle
+
+1. `OnAttach` when the object joins a scene. It touches only the object itself and scene events.
+2. `Start` once, at the beginning of the next update, after every object that was loaded is in the scene. It may look at the rest of the world with `Scene.Find<T>()`. Order between objects is undefined.
+3. `Update` and `PhysicsUpdate` each frame, for objects that are active in the hierarchy.
+4. `OnDetach` when the object leaves the scene.
+
+### Reaching other objects
+
+An object stores only its own children. Everything else is found by type when needed (`Scene.Find<T>()`, `Scene.FindAll<T>()`, linear scan, call from `Start`), or arrives through events. Saving a reference to another object in a field is avoided on purpose, so scene data never needs object-to-object links.
 
 ## Event Bus
 
 Each scene owns one typed synchronous `EventBus`. Events are plain structs implementing `ISceneEvent`. Subscriptions are created with `Subscribe<TEvent>(Action<TEvent>)` and released by disposing the returned `IDisposable`.
 
-Events represent facts that already happened, not commands. Breakout currently publishes:
-
-- `BallLaunchedEvent`
-- `BallOutOfBoundsEvent`
-- `BrickDestroyedEvent`
-- `RoundStartedEvent`
-
-This keeps communication decoupled where useful. For structural relationships, direct references remain valid. For example, ball behavior receives the paddle and brick list during scene setup, while score/life state reacts to published facts.
+Events represent facts that already happened, not commands. Breakout currently publishes `BallLaunchedEvent`, `BallOutOfBoundsEvent`, `BrickDestroyedEvent`, and `RoundStartedEvent`.
 
 ## Rendering
 
-Rendering remains component-driven. `Application` clears `ActiveScene.BackgroundColor` and owns one generic `RenderSystem`, which gathers visible active objects from `ActiveScene.Objects`, picks the first renderer component it understands, sorts entries by `GameObject.ZIndex`, and draws them in order.
+`Application` clears `ActiveScene.BackgroundColor` and owns one `RenderSystem`. It gathers objects that are active and visible in the hierarchy, pairs each with its world transform, sorts by `ZIndex`, and calls each object's `Draw`. Drawable object types implement `Draw` themselves; objects that draw nothing inherit the empty default.
 
-`GameObject` carries shared render state: visibility, draw order, and modulation color. Shape-specific renderer components describe visual data. `RectangleRendererComponent`, `CircleRendererComponent`, and `TextRendererComponent` are handled by corresponding renderer handlers.
-
-Breakout presentation is modeled as scene objects. The arena, HUD text, and overlay panel/text use regular renderer components, while `PresentationBehavior` updates score, lives, text alignment, and overlay visibility from scene state.
+`Modulate` is per object and is not inherited. `RenderSystem` owns the texture cache and the color modulation helper.
 
 ## Physics And Collision
 
-The collision math stays generic. `BoxColliderComponent` stores local box size, and `BoxCollision.GetCollision` combines that size with transforms to produce a signed `Collision` result. `CollisionHelper.GetCorrection` turns negative-distance collisions into separation vectors.
+The collision math stays generic. `BoxCollider` stores a local box size. `BoxCollision.GetCollision` combines it with world transforms to produce a signed `Collision` result. `CollisionHelper.GetCorrection` turns negative-distance collisions into separation vectors.
 
-Breakout collision meaning now lives in object behavior. `BallBehavior` moves the ball, resolves arena wall collision, resolves paddle collision, checks brick collision, and publishes `BallOutOfBoundsEvent` when the ball leaves the arena. `BrickBehavior` owns brick destruction and publishes `BrickDestroyedEvent`.
+Breakout collision meaning lives in game classes. `Ball` moves, resolves arena walls, the paddle, and bricks, and publishes `BallOutOfBoundsEvent`. `Brick` owns its destruction and publishes `BrickDestroyedEvent`.
 
-The split remains: engine physics answers geometric questions; game behavior decides gameplay meaning.
+The split remains: engine physics answers geometric questions; game code decides gameplay meaning.
 
 ## Breakout Game Flow
 
-Game object modules live under `Game/Objects/<ObjectName>/`. Each module keeps the object's data component, behavior, and construction recipe together when applicable, such as `Game/Objects/Ball/BallComponent.cs`, `BallBehavior.cs`, and `BallObject.cs`.
+Game classes live under `Game/Objects/<Name>/`. Event definitions live under `Game/Runtime`.
 
-Game event definitions live under `Game/Runtime`, beside other game flow primitives rather than in a standalone events module.
+`BreakoutScene` stores screen dimensions, the arena rectangle, and the input snapshot. Its `Setup` creates the `GameState`, `Paddle`, `Ball`, arena rectangle, and `Hud`, and adds them to the scene.
 
-`BreakoutScene` stores screen dimensions, arena rectangle, input snapshot, phase, score, lives, and remaining brick count. Its setup method constructs a dedicated `GameState` object, paddle, ball, and presentation graph; wires their dependencies; then explicitly inserts the completed objects in lifecycle order.
+`GameState` holds phase, score, lives, and remaining bricks, and runs round flow. In `Start` it finds the paddle and ball, builds the brick wall with `BrickWallObjects`, and enters serving phase. It subscribes to brick and ball events. Other objects read it with `Scene.Find<GameState>()`.
 
-`RoundBehavior` owns round and game-state flow. On start it requests unattached bricks from `BrickWallObjects`, replaces the old wall's scene membership, resets its wired paddle and ball references, and enters serving phase. It subscribes to brick and ball events. Brick destruction updates score and win state. Ball out-of-bounds reduces lives, resets the round, or enters lost state. In won/lost phases, confirm input starts a fresh game.
-
-`PaddleBehavior` owns paddle movement during serving and playing phases.
-
-`BallBehavior` owns serving attachment, launch, movement, collision response, and ball-out event publishing.
-
-`BrickBehavior` owns local brick destruction and render visibility.
-
-`PresentationBehavior` owns HUD text updates, controls text alignment, and phase overlay visibility.
-
-Object recipes construct components and return unattached objects. Single-object recipes such as `BallObject` and `BrickObject` have no scene dependency. Multi-object recipes such as `PresentationObjects` and `BrickWallObjects` return ordered collections. Scene setup or runtime behavior controls insertion and removal explicitly.
+`Paddle` moves during serving and playing phases. `Ball` handles serving attachment, launch, movement, collision response, and ball-out event publishing. `Brick` handles its own destruction. `Hud` updates score, lives, controls text, and the phase overlay.
 
 ## Data And Tuning
 
-Game tuning lives in `BreakoutRules`. Visual tuning lives in `BreakoutTheme`. Game components use these constants directly instead of scattering magic numbers through gameplay code.
+Game tuning lives in `BreakoutRules`. Visual tuning lives in `BreakoutTheme`.
 
 ## Current Boundaries
 
-The engine is still intentionally small. There is no scene serialization, object hierarchy, broadphase physics, rigid-body simulation, animation system, behavior priority ordering, queued event delivery, global event bus, or editor-facing scripting model.
+There is no scene serialization, reparenting, broadphase physics, rigid-body simulation, animation system, event queueing, or editor-facing model. Scene switching (`Application.ChangeScene`) is only half built: it does not detach the outgoing scene's objects, and a scene cannot request a change.
 
-The most important boundary remains engine versus game code. `Engine/` provides generic lifecycle, events, rendering, scene/object storage, and box-collision helpers. `Game/` owns Breakout rules, object behavior, scene state, level content, and presentation.
+The most important boundary remains engine versus game code. `Engine/` provides the generic object tree, lifecycle, events, drawable objects, collider, and audio. `Game/` owns Breakout rules, object behavior, scene state, level content, and presentation.

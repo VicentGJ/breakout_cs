@@ -66,7 +66,7 @@ NOT a shipped engine - expect iteration on architecture.
 
 The goal is not maximal abstraction or a prematurely “clean” engine. Preserve seams that serve an intended direction, then keep their implementation minimal until real use requires more. Explain why an engine pattern exists, what future problem it solves, and its present cost before recommending it be removed.
 
-Current direction: scenes own runtime objects; object-level 2D state (`Transform2D`, visibility, draw order, and modulation) lives on `GameObject`; renderer components describe what to draw. The generic scene `EventBus` remains intentional for one game fact with multiple independent reactions. Scene data should eventually serialize objects, components, and configuration.
+Current direction: scenes own runtime objects; object-level 2D state (`Transform2D`, visibility, draw order, and modulation) lives on `GameObject`; the object model is Godot-style (typed `GameObject` subclasses such as `Sprite`, `BoxCollider`, `Ball`; reuse through children in the tree, no components); drawable object types draw themselves. The generic scene `EventBus` remains intentional for one game fact with multiple independent reactions. Scene data should eventually serialize objects (type name plus public members) and configuration.
 
 ## Naming Conventions (Locked)
 
@@ -76,10 +76,10 @@ Current direction: scenes own runtime objects; object-level 2D state (`Transform
 
 ## What May Change
 
-- Component model details
+- Object model details
 - Systems design
-- Renderer component types
-- Object/component organization
+- Drawable object types
+- Object and child organization
 
 ## What's Stable
 

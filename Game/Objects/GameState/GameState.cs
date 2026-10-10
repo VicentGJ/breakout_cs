@@ -2,10 +2,20 @@ using System.Numerics;
 
 namespace Breakout;
 
-sealed class RoundBehavior(GameObject paddle, GameObject ballObject, List<GameObject> bricks) : Component, IStartable, IUpdatable
+sealed class GameState : GameObject
 {
+    private Paddle _paddle = null!;
+    private Ball _ball = null!;
     private IDisposable? _ballOutOfBoundsSubscription;
     private IDisposable? _brickDestroyedSubscription;
+
+    public GamePhase Phase { get; set; }
+
+    public int Score { get; set; }
+
+    public int Lives { get; set; }
+
+    public int BricksRemaining { get; set; }
 
     protected override void OnAttach()
     {
@@ -19,16 +29,18 @@ sealed class RoundBehavior(GameObject paddle, GameObject ballObject, List<GameOb
         _brickDestroyedSubscription?.Dispose();
     }
 
-    public void Start()
+    public override void Start()
     {
+        _paddle = Scene.Find<Paddle>()!;
+        _ball = Scene.Find<Ball>()!;
         StartNewGame();
     }
 
-    public void Update(float dt)
+    public override void Update(float dt)
     {
         BreakoutScene scene = (BreakoutScene)Scene;
 
-        if (scene.Phase is (GamePhase.Won or GamePhase.Lost) && scene.Input.ConfirmPressed)
+        if (Phase is (GamePhase.Won or GamePhase.Lost) && scene.Input.ConfirmPressed)
         {
             StartNewGame();
         }
@@ -37,75 +49,71 @@ sealed class RoundBehavior(GameObject paddle, GameObject ballObject, List<GameOb
     private void StartNewGame()
     {
         BreakoutScene scene = (BreakoutScene)Scene;
-        scene.Score = 0;
-        scene.Lives = BreakoutRules.StartingLives;
+        Score = 0;
+        Lives = BreakoutRules.StartingLives;
         RebuildBrickWall(scene);
         ResetRound();
     }
 
     private void RebuildBrickWall(BreakoutScene scene)
     {
-        foreach (GameObject brick in bricks)
+        foreach (Brick brick in Scene.FindAll<Brick>().ToList())
         {
             Scene.RemoveObject(brick);
         }
 
-        bricks.Clear();
+        IReadOnlyList<Brick> bricks = BrickWallObjects.Create(scene.Arena);
 
-        foreach (GameObject brick in BrickWallObjects.Create(scene.Arena))
+        foreach (Brick brick in bricks)
         {
             Scene.AddObject(brick);
-            bricks.Add(brick);
         }
 
-        scene.BricksRemaining = bricks.Count;
+        BricksRemaining = bricks.Count;
     }
 
     private void ResetRound()
     {
         BreakoutScene scene = (BreakoutScene)Scene;
-        scene.Phase = GamePhase.Serving;
+        Phase = GamePhase.Serving;
         ResetRoundObjects(scene);
         Scene.Events.Publish(new RoundStartedEvent());
     }
 
     private void ResetRoundObjects(BreakoutScene scene)
     {
-        paddle.Active = true;
-        ballObject.Active = true;
+        _paddle.Active = true;
+        _ball.Active = true;
 
-        Transform2D paddleTransform = paddle.Transform2D;
+        Transform2D paddleTransform = _paddle.Transform2D;
         paddleTransform.Position = new Vector2(
             scene.Arena.X + scene.Arena.Width * 0.5f,
             scene.ArenaBottom - BreakoutRules.PaddleFloorOffset + BreakoutRules.PaddleSize.Y * 0.5f);
         paddleTransform.Rotation = 0f;
         paddleTransform.Scale = Vector2.One;
-        paddle.Transform2D = paddleTransform;
+        _paddle.Transform2D = paddleTransform;
 
-        Transform2D ballTransform = ballObject.Transform2D;
-        BallComponent ball = ballObject.Get<BallComponent>();
+        Transform2D ballTransform = _ball.Transform2D;
         ballTransform.Position = Vector2.Zero;
         ballTransform.Rotation = 0f;
         ballTransform.Scale = Vector2.One;
-        ball.PreviousPosition = Vector2.Zero;
-        ball.Velocity = Vector2.Zero;
-        ballObject.Transform2D = ballTransform;
+        _ball.PreviousPosition = Vector2.Zero;
+        _ball.Velocity = Vector2.Zero;
+        _ball.Transform2D = ballTransform;
     }
 
     private void OnBallOutOfBounds(BallOutOfBoundsEvent evt)
     {
-        BreakoutScene scene = (BreakoutScene)Scene;
-
-        if (scene.Phase != GamePhase.Playing)
+        if (Phase != GamePhase.Playing)
         {
             return;
         }
 
-        scene.Lives--;
+        Lives--;
 
-        if (scene.Lives <= 0)
+        if (Lives <= 0)
         {
-            scene.Phase = GamePhase.Lost;
+            Phase = GamePhase.Lost;
             return;
         }
 
@@ -114,13 +122,12 @@ sealed class RoundBehavior(GameObject paddle, GameObject ballObject, List<GameOb
 
     private void OnBrickDestroyed(BrickDestroyedEvent evt)
     {
-        BreakoutScene scene = (BreakoutScene)Scene;
-        scene.BricksRemaining--;
-        scene.Score += evt.Score;
+        BricksRemaining--;
+        Score += evt.Score;
 
-        if (scene.BricksRemaining == 0)
+        if (BricksRemaining == 0)
         {
-            scene.Phase = GamePhase.Won;
+            Phase = GamePhase.Won;
         }
     }
 }

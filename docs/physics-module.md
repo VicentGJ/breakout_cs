@@ -8,7 +8,7 @@ The design goal is to keep the engine responsible for geometry and correction, w
 
 ## Implemented V1
 
-Version 1 is box-only. Every collidable object is represented by a `BoxColliderComponent` with a local size. The collider is centered on the object origin, and the object’s `Transform2D` provides the world-space position.
+Version 1 is box-only. Every collidable object is represented by a `BoxCollider` object with a local size. The collider is centered on its own origin, and its world transform (its `Transform2D` combined with its parent chain) provides the world-space position. A collidable thing is a parent object with a `BoxCollider` child.
 
 This first version must support three things:
 
@@ -26,9 +26,9 @@ Circle colliders are also out of scope for the first pass. They may be added lat
 
 ## Public Shape Model
 
-The public collision shape for v1 is `BoxColliderComponent`.
+The public collision shape for v1 is `BoxCollider`.
 
-It should hold local-space shape data only. The collider should not store world-space state or attempt to own the object’s transform. Instead, it should be a component-style data structure attached to an object, with the world position coming from `Transform2D` when collision queries run.
+It should hold local-space shape data only. The collider should not store world-space state or attempt to own the object’s transform. Instead, it should be a child object, with the world position coming from `GetWorldTransform()` when collision queries run.
 
 The shape data itself is simple:
 
@@ -51,9 +51,10 @@ The module should feel closer to Unity than to a separate query service. The col
 The v1 surface should look like this:
 
 ```csharp
-sealed class BoxColliderComponent : Component
+sealed class BoxCollider : GameObject
 {
     Vector2 Size;
+    Collision GetCollision(BoxCollider other);
 }
 
 struct Collision
@@ -78,8 +79,8 @@ This keeps the public API small and readable. Game code talks to colliders direc
 Example flow:
 
 ```csharp
-var playerBox = player.Get<BoxColliderComponent>();
-var wallBox = wall.Get<BoxColliderComponent>();
+var playerBox = player.Collider;
+var wallBox = wall.Collider;
 
 var collision = BoxCollision.GetCollision(playerBox, wallBox, player.Transform2D, wall.Transform2D);
 var correction = CollisionHelper.GetCorrection(collision);
@@ -112,7 +113,7 @@ For v1, all three fields are part of the public result. `Point` is included for 
 
 The physics module decides geometry. It should answer whether objects overlap, which side the contact came from, how far the overlap goes, and how to move the objects apart.
 
-The physics module should not decide game meaning. It should not destroy bricks, update score, choose a special bounce angle, or determine win and lose state. Those are gameplay rules and belong in game-side behavior components.
+The physics module should not decide game meaning. It should not destroy bricks, update score, choose a special bounce angle, or determine win and lose state. Those are gameplay rules and belong in game-side object classes.
 
 This split keeps the engine reusable. The same collision code can later support a different game with different rules.
 
@@ -120,7 +121,7 @@ This split keeps the engine reusable. The same collision code can later support 
 
 The module should live under `Engine/Physics/` and stay small enough to reason about easily.
 
-- `BoxColliderComponent.cs`: the component type
+- `BoxCollider.cs`: the collider object type
 - `Collision.cs`: collision result data
 - `CollisionHelper.cs`: helper math such as correction vectors
 - `BoxCollision.cs`: internal box-box intersection and contact math
@@ -129,13 +130,13 @@ That layout keeps shape data, math, and query code separated without over-engine
 
 ## Current Boundary
 
-This first pass is complete. The engine provides box collision geometry and correction. `BallBehavior` applies Breakout-specific movement, bounce, brick destruction, and round consequences.
+This first pass is complete. The engine provides box collision geometry and correction. `Ball` applies Breakout-specific movement, bounce, brick destruction, and round consequences.
 
 The engine has:
 
 - geometry in `Engine/Physics/`
 
-- game rules in behavior components
+- game rules in game object classes
 
 - a single box collider shape for v1
 
