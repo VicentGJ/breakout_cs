@@ -21,7 +21,7 @@ sealed class Brick : GameObject
             return;
         }
 
-        Scene.Events.Publish(new BrickDestroyedEvent(this, Points));
+        World.Events.Publish(new BrickDestroyedEvent(this, Points));
         Active = false;
     }
 }

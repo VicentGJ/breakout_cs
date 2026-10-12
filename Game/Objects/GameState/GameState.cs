@@ -19,8 +19,8 @@ sealed class GameState : GameObject
 
     protected override void OnAttach()
     {
-        _ballOutOfBoundsSubscription = Scene.Events.Subscribe<BallOutOfBoundsEvent>(OnBallOutOfBounds);
-        _brickDestroyedSubscription = Scene.Events.Subscribe<BrickDestroyedEvent>(OnBrickDestroyed);
+        _ballOutOfBoundsSubscription = World.Events.Subscribe<BallOutOfBoundsEvent>(OnBallOutOfBounds);
+        _brickDestroyedSubscription = World.Events.Subscribe<BrickDestroyedEvent>(OnBrickDestroyed);
     }
 
     protected override void OnDetach()
@@ -31,16 +31,16 @@ sealed class GameState : GameObject
 
     public override void Start()
     {
-        _paddle = Scene.Find<Paddle>()!;
-        _ball = Scene.Find<Ball>()!;
+        _paddle = World.Find<Paddle>()!;
+        _ball = World.Find<Ball>()!;
         StartNewGame();
     }
 
     public override void Update(float dt)
     {
-        BreakoutScene scene = (BreakoutScene)Scene;
+        BreakoutWorld world = (BreakoutWorld)World;
 
-        if (Phase is (GamePhase.Won or GamePhase.Lost) && scene.Input.ConfirmPressed)
+        if (Phase is (GamePhase.Won or GamePhase.Lost) && world.Input.ConfirmPressed)
         {
             StartNewGame();
         }
@@ -48,25 +48,25 @@ sealed class GameState : GameObject
 
     private void StartNewGame()
     {
-        BreakoutScene scene = (BreakoutScene)Scene;
+        BreakoutWorld world = (BreakoutWorld)World;
         Score = 0;
         Lives = BreakoutRules.StartingLives;
-        RebuildBrickWall(scene);
+        RebuildBrickWall(world);
         ResetRound();
     }
 
-    private void RebuildBrickWall(BreakoutScene scene)
+    private void RebuildBrickWall(BreakoutWorld world)
     {
-        foreach (Brick brick in Scene.FindAll<Brick>().ToList())
+        foreach (Brick brick in World.FindAll<Brick>().ToList())
         {
-            Scene.RemoveObject(brick);
+            World.RemoveObject(brick);
         }
 
-        IReadOnlyList<Brick> bricks = BrickWallObjects.Create(scene.Arena);
+        IReadOnlyList<Brick> bricks = BrickWallObjects.Create(world.Arena);
 
         foreach (Brick brick in bricks)
         {
-            Scene.AddObject(brick);
+            World.AddObject(brick);
         }
 
         BricksRemaining = bricks.Count;
@@ -74,21 +74,21 @@ sealed class GameState : GameObject
 
     private void ResetRound()
     {
-        BreakoutScene scene = (BreakoutScene)Scene;
+        BreakoutWorld world = (BreakoutWorld)World;
         Phase = GamePhase.Serving;
-        ResetRoundObjects(scene);
-        Scene.Events.Publish(new RoundStartedEvent());
+        ResetRoundObjects(world);
+        World.Events.Publish(new RoundStartedEvent());
     }
 
-    private void ResetRoundObjects(BreakoutScene scene)
+    private void ResetRoundObjects(BreakoutWorld world)
     {
         _paddle.Active = true;
         _ball.Active = true;
 
         Transform2D paddleTransform = _paddle.Transform2D;
         paddleTransform.Position = new Vector2(
-            scene.Arena.X + scene.Arena.Width * 0.5f,
-            scene.ArenaBottom - BreakoutRules.PaddleFloorOffset + BreakoutRules.PaddleSize.Y * 0.5f);
+            world.Arena.X + world.Arena.Width * 0.5f,
+            world.ArenaBottom - BreakoutRules.PaddleFloorOffset + BreakoutRules.PaddleSize.Y * 0.5f);
         paddleTransform.Rotation = 0f;
         paddleTransform.Scale = Vector2.One;
         _paddle.Transform2D = paddleTransform;

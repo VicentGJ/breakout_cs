@@ -35,10 +35,10 @@ sealed class Hud : GameObject
 
     public override void Start()
     {
-        BreakoutScene scene = (BreakoutScene)Scene;
-        _game = Scene.Find<GameState>()!;
+        BreakoutWorld world = (BreakoutWorld)World;
+        _game = World.Find<GameState>()!;
 
-        Vector2 panelPosition = new((scene.ScreenWidth - PanelWidth) * 0.5f, (scene.ScreenHeight - PanelHeight) * 0.5f);
+        Vector2 panelPosition = new((world.ScreenWidth - PanelWidth) * 0.5f, (world.ScreenHeight - PanelHeight) * 0.5f);
         SetPosition(_scoreText, new Vector2(32f, 18f));
         SetPosition(_overlayPanel, panelPosition);
         SetPosition(_overlayTitle, new Vector2(0f, panelPosition.Y + 28f));
@@ -47,19 +47,19 @@ sealed class Hud : GameObject
 
     public override void Update(float dt)
     {
-        BreakoutScene scene = (BreakoutScene)Scene;
+        BreakoutWorld world = (BreakoutWorld)World;
 
         _scoreText.Text = $"Score: {_game.Score}";
         _livesText.Text = $"Lives: {_game.Lives}";
-        AlignRight(_livesText, scene.ScreenWidth - 32f);
+        AlignRight(_livesText, world.ScreenWidth - 32f);
 
         _controlsText.Text = "Move: A/D or arrows   Launch: Space";
-        CenterText(_controlsText, scene.ScreenWidth, scene.ScreenHeight - 28f);
+        CenterText(_controlsText, world.ScreenWidth, world.ScreenHeight - 28f);
 
-        UpdateOverlay(scene);
+        UpdateOverlay(world);
     }
 
-    private void UpdateOverlay(BreakoutScene scene)
+    private void UpdateOverlay(BreakoutWorld world)
     {
         bool visible = _game.Phase != GamePhase.Playing;
         _overlayPanel.Visible = visible;
@@ -92,8 +92,8 @@ sealed class Hud : GameObject
 
         _overlayTitle.Text = title;
         _overlaySubtitle.Text = subtitle;
-        CenterText(_overlayTitle, scene.ScreenWidth, _overlayTitle.Transform2D.Position.Y);
-        CenterText(_overlaySubtitle, scene.ScreenWidth, _overlaySubtitle.Transform2D.Position.Y);
+        CenterText(_overlayTitle, world.ScreenWidth, _overlayTitle.Transform2D.Position.Y);
+        CenterText(_overlaySubtitle, world.ScreenWidth, _overlaySubtitle.Transform2D.Position.Y);
     }
 
     private static void SetPosition(GameObject gameObject, Vector2 position)

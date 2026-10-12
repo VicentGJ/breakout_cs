@@ -2,12 +2,12 @@ using Raylib_cs;
 
 namespace Breakout;
 
-sealed class Application(int windowWidth, int windowHeight, string title, Scene initialScene)
+sealed class Application(int windowWidth, int windowHeight, string title, World initialWorld)
 {
     private readonly RenderSystem _renderSystem = new();
     private AudioSystem? _audioSystem;
 
-    public Scene ActiveScene { get; private set; } = initialScene;
+    public World ActiveWorld { get; private set; } = initialWorld;
 
     public RuntimeTime Time { get; } = new();
 
@@ -19,7 +19,7 @@ sealed class Application(int windowWidth, int windowHeight, string title, Scene 
         try
         {
             _audioSystem = new AudioSystem();
-            ChangeScene(ActiveScene);
+            ChangeWorld(ActiveWorld);
 
             while (!Raylib.WindowShouldClose())
             {
@@ -41,19 +41,19 @@ sealed class Application(int windowWidth, int windowHeight, string title, Scene 
         }
     }
 
-    public void ChangeScene(Scene scene)
+    public void ChangeWorld(World world)
     {
         if (_audioSystem is null)
         {
-            ActiveScene = scene;
+            ActiveWorld = world;
             return;
         }
 
-        _audioSystem.StopScene(ActiveScene);
-        ActiveScene.UnbindAudio(_audioSystem);
-        ActiveScene = scene;
-        ActiveScene.BindAudio(_audioSystem);
-        ActiveScene.SetupOnce();
+        _audioSystem.StopWorld(ActiveWorld);
+        ActiveWorld.UnbindAudio(_audioSystem);
+        ActiveWorld = world;
+        ActiveWorld.BindAudio(_audioSystem);
+        ActiveWorld.SetupOnce();
     }
 
     private void BeginFrame(float unscaledDeltaTime)
@@ -64,20 +64,20 @@ sealed class Application(int windowWidth, int windowHeight, string title, Scene 
 
     private void Update()
     {
-        ActiveScene.Update(Time.DeltaTime);
-        ActiveScene.UpdateObjects(Time.DeltaTime);
+        ActiveWorld.Update(Time.DeltaTime);
+        ActiveWorld.UpdateObjects(Time.DeltaTime);
     }
 
     private void PhysicsUpdate()
     {
-        ActiveScene.PhysicsUpdate(Time.DeltaTime);
-        ActiveScene.PhysicsUpdateObjects(Time.DeltaTime);
+        ActiveWorld.PhysicsUpdate(Time.DeltaTime);
+        ActiveWorld.PhysicsUpdateObjects(Time.DeltaTime);
     }
 
     private void Draw()
     {
-        Raylib.ClearBackground(ActiveScene.BackgroundColor);
-        _renderSystem.Draw(ActiveScene.Objects);
+        Raylib.ClearBackground(ActiveWorld.BackgroundColor);
+        _renderSystem.Draw(ActiveWorld.Objects);
     }
 }
 

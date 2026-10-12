@@ -3,9 +3,9 @@ using Raylib_cs;
 
 namespace Breakout;
 
-sealed class BreakoutScene : Scene
+sealed class BreakoutWorld : World
 {
-    public BreakoutScene(int screenWidth, int screenHeight)
+    public BreakoutWorld(int screenWidth, int screenHeight)
     {
         ScreenWidth = screenWidth;
         ScreenHeight = screenHeight;

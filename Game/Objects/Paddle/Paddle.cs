@@ -25,7 +25,7 @@ sealed class Paddle : GameObject
 
     public override void Start()
     {
-        _game = Scene.Find<GameState>()!;
+        _game = World.Find<GameState>()!;
     }
 
     public override void Update(float dt)
@@ -35,12 +35,12 @@ sealed class Paddle : GameObject
             return;
         }
 
-        BreakoutScene scene = (BreakoutScene)Scene;
+        BreakoutWorld world = (BreakoutWorld)World;
         Transform2D transform = Transform2D;
         float halfWidth = MathF.Abs(Collider.Size.X * transform.Scale.X) * 0.5f;
 
-        transform.Position.X += scene.Input.HorizontalAxis * Speed * dt;
-        transform.Position.X = Math.Clamp(transform.Position.X, scene.Arena.X + halfWidth, scene.ArenaRight - halfWidth);
+        transform.Position.X += world.Input.HorizontalAxis * Speed * dt;
+        transform.Position.X = Math.Clamp(transform.Position.X, world.Arena.X + halfWidth, world.ArenaRight - halfWidth);
 
         Transform2D = transform;
     }

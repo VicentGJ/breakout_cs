@@ -2,7 +2,7 @@ using Raylib_cs;
 
 namespace Breakout;
 
-abstract class Scene
+abstract class World
 {
     private readonly List<GameObject> _objects = [];
     private readonly List<GameObject> _dispatchList = [];
@@ -13,7 +13,7 @@ abstract class Scene
 
     internal AudioSystem? Audio { get; private set; }
 
-    // Flat list of every object in the scene, children included (parents come before their children).
+    // Flat list of every object in the world, children included (parents come before their children).
     public IReadOnlyList<GameObject> Objects => _objects;
 
     public Color BackgroundColor { get; set; } = Color.Black;
@@ -33,9 +33,9 @@ abstract class Scene
     // Adds a root object together with its whole subtree.
     public void AddObject(GameObject gameObject)
     {
-        if (gameObject.Parent is not null || gameObject.Scene is not null)
+        if (gameObject.Parent is not null || gameObject.World is not null)
         {
-            throw new InvalidOperationException($"GameObject '{gameObject.Name}' already has a parent or belongs to a scene.");
+            throw new InvalidOperationException($"GameObject '{gameObject.Name}' already has a parent or belongs to a world.");
         }
 
         Register(gameObject);
@@ -44,7 +44,7 @@ abstract class Scene
     // Removes an object together with its whole subtree.
     public void RemoveObject(GameObject gameObject)
     {
-        if (gameObject.Scene != this)
+        if (gameObject.World != this)
         {
             return;
         }
@@ -88,13 +88,13 @@ abstract class Scene
         }
 
         _objects.Add(gameObject);
-        gameObject.AttachToScene(this);
+        gameObject.AttachToWorld(this);
 
         for (int i = 0; i < gameObject.Children.Count; i++)
         {
             GameObject child = gameObject.Children[i];
 
-            if (child.Scene is null)
+            if (child.World is null)
             {
                 Register(child);
             }
@@ -163,14 +163,14 @@ abstract class Scene
     {
         foreach (GameObject child in gameObject.Children)
         {
-            if (child.Scene == this)
+            if (child.World == this)
             {
                 Unregister(child);
             }
         }
 
         _objects.Remove(gameObject);
-        gameObject.DetachFromScene();
+        gameObject.DetachFromWorld();
     }
 
     private void Snapshot()
@@ -188,6 +188,6 @@ abstract class Scene
 
     private bool IsLive(GameObject gameObject)
     {
-        return gameObject.Scene == this && gameObject.ActiveInHierarchy;
+        return gameObject.World == this && gameObject.ActiveInHierarchy;
     }
 }

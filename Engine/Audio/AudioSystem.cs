@@ -68,13 +68,13 @@ sealed class AudioSystem : IDisposable
         return _voices.TryGetValue(player, out Sound voice) && Raylib.IsSoundPlaying(voice);
     }
 
-    public void StopScene(Scene scene)
+    public void StopWorld(World world)
     {
         List<AudioPlayer> players = [];
 
         foreach (AudioPlayer player in _voices.Keys)
         {
-            if (player.Scene == scene)
+            if (player.World == world)
             {
                 players.Add(player);
             }

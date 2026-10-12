@@ -9,7 +9,7 @@ static class Program
     [System.STAThread]
     public static void Main()
     {
-        var app = new Application(WindowWidth, WindowHeight, "Breakout", new BreakoutScene(WindowWidth, WindowHeight));
+        var app = new Application(WindowWidth, WindowHeight, "Breakout", new BreakoutWorld(WindowWidth, WindowHeight));
         app.Run();
     }
 }

@@ -32,8 +32,8 @@ sealed class Ball : GameObject
 
     public override void Start()
     {
-        _game = Scene.Find<GameState>()!;
-        _paddle = Scene.Find<Paddle>()!;
+        _game = World.Find<GameState>()!;
+        _paddle = World.Find<Paddle>()!;
     }
 
     public override void Update(float dt)
@@ -45,7 +45,7 @@ sealed class Ball : GameObject
 
         StickToPaddle();
 
-        if (((BreakoutScene)Scene).Input.LaunchPressed)
+        if (((BreakoutWorld)World).Input.LaunchPressed)
         {
             Launch();
         }
@@ -58,13 +58,13 @@ sealed class Ball : GameObject
             return;
         }
 
-        BreakoutScene scene = (BreakoutScene)Scene;
+        BreakoutWorld world = (BreakoutWorld)World;
 
         Move(dt);
-        ResolveWallCollisions(scene);
+        ResolveWallCollisions(world);
         ResolvePaddleCollision();
         ResolveBrickCollision();
-        PublishOutOfBounds(scene);
+        PublishOutOfBounds(world);
     }
 
     private void StickToPaddle()
@@ -86,7 +86,7 @@ sealed class Ball : GameObject
         float horizontalDirection = Raylib.GetRandomValue(0, 1) == 0 ? -0.65f : 0.65f;
         Velocity = Vector2.Normalize(new Vector2(horizontalDirection, -1f)) * BreakoutRules.BallSpeed;
         _game.Phase = GamePhase.Playing;
-        Scene.Events.Publish(new BallLaunchedEvent(this));
+        World.Events.Publish(new BallLaunchedEvent(this));
     }
 
     private void Move(float dt)
@@ -99,28 +99,28 @@ sealed class Ball : GameObject
         Transform2D = transform;
     }
 
-    private void ResolveWallCollisions(BreakoutScene scene)
+    private void ResolveWallCollisions(BreakoutWorld world)
     {
         Transform2D ballTransform = Transform2D;
         Vector2 ballHalfSize = Vector2.Abs(Collider.Size * ballTransform.Scale) * 0.5f;
         bool bounced = false;
 
-        if (ballTransform.Position.X - ballHalfSize.X < scene.Arena.X)
+        if (ballTransform.Position.X - ballHalfSize.X < world.Arena.X)
         {
-            ballTransform.Position.X = scene.Arena.X + ballHalfSize.X;
+            ballTransform.Position.X = world.Arena.X + ballHalfSize.X;
             Velocity.X = MathF.Abs(Velocity.X);
             bounced = true;
         }
-        else if (ballTransform.Position.X + ballHalfSize.X > scene.ArenaRight)
+        else if (ballTransform.Position.X + ballHalfSize.X > world.ArenaRight)
         {
-            ballTransform.Position.X = scene.ArenaRight - ballHalfSize.X;
+            ballTransform.Position.X = world.ArenaRight - ballHalfSize.X;
             Velocity.X = -MathF.Abs(Velocity.X);
             bounced = true;
         }
 
-        if (ballTransform.Position.Y - ballHalfSize.Y < scene.Arena.Y)
+        if (ballTransform.Position.Y - ballHalfSize.Y < world.Arena.Y)
         {
-            ballTransform.Position.Y = scene.Arena.Y + ballHalfSize.Y;
+            ballTransform.Position.Y = world.Arena.Y + ballHalfSize.Y;
             Velocity.Y = MathF.Abs(Velocity.Y);
             bounced = true;
         }
@@ -157,7 +157,7 @@ sealed class Ball : GameObject
 
     private void ResolveBrickCollision()
     {
-        foreach (Brick brick in Scene.FindAll<Brick>())
+        foreach (Brick brick in World.FindAll<Brick>())
         {
             if (!brick.ActiveInHierarchy)
             {
@@ -196,14 +196,14 @@ sealed class Ball : GameObject
         Bounce.Play();
     }
 
-    private void PublishOutOfBounds(BreakoutScene scene)
+    private void PublishOutOfBounds(BreakoutWorld world)
     {
         Transform2D ballTransform = Transform2D;
         float ballHalfHeight = MathF.Abs(Collider.Size.Y * ballTransform.Scale.Y) * 0.5f;
 
-        if (ballTransform.Position.Y - ballHalfHeight > scene.ArenaBottom)
+        if (ballTransform.Position.Y - ballHalfHeight > world.ArenaBottom)
         {
-            Scene.Events.Publish(new BallOutOfBoundsEvent(this));
+            World.Events.Publish(new BallOutOfBoundsEvent(this));
         }
     }
 }

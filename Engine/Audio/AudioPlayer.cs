@@ -22,12 +22,12 @@ sealed class AudioPlayer : GameObject
 
     protected override void OnDetach()
     {
-        Scene.Audio?.Release(this);
+        World.Audio?.Release(this);
     }
 
     private AudioSystem GetAudio()
     {
-        return Scene.Audio
-            ?? throw new InvalidOperationException("Audio is unavailable for this scene.");
+        return World.Audio
+            ?? throw new InvalidOperationException("Audio is unavailable for this world.");
     }
 }

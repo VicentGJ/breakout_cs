@@ -28,7 +28,7 @@ class GameObject
     // Local transform: relative to Parent. For root objects local == world.
     public Transform2D Transform2D { get; set; } = global::Breakout.Transform2D.Default;
 
-    public Scene Scene { get; private set; } = null!;
+    public World World { get; private set; } = null!;
 
     public GameObject? Parent { get; private set; }
 
@@ -41,9 +41,9 @@ class GameObject
 
     public T AddChild<T>(T child) where T : GameObject
     {
-        if (child.Parent is not null || child.Scene is not null)
+        if (child.Parent is not null || child.World is not null)
         {
-            throw new InvalidOperationException($"GameObject '{child.Name}' already has a parent or belongs to a scene.");
+            throw new InvalidOperationException($"GameObject '{child.Name}' already has a parent or belongs to a world.");
         }
 
         for (GameObject? ancestor = this; ancestor is not null; ancestor = ancestor.Parent)
@@ -57,9 +57,9 @@ class GameObject
         child.Parent = this;
         _children.Add(child);
 
-        if (Scene is not null)
+        if (World is not null)
         {
-            Scene.Register(child);
+            World.Register(child);
         }
 
         return child;
@@ -85,9 +85,9 @@ class GameObject
         };
     }
 
-    // Lifecycle hooks. OnAttach/OnDetach touch only this object (and scene events).
-    // Start runs once at the beginning of the first update after the whole scene is loaded,
-    // so it may look at the rest of the world with Scene.Find.
+    // Lifecycle hooks. OnAttach/OnDetach touch only this object (and world events).
+    // Start runs once at the beginning of the first update after the whole world is loaded,
+    // so it may look at the rest of the world with World.Find.
     protected virtual void OnAttach()
     {
     }
@@ -112,17 +112,17 @@ class GameObject
     {
     }
 
-    internal void AttachToScene(Scene scene)
+    internal void AttachToWorld(World world)
     {
-        Scene = scene;
+        World = world;
         OnAttach();
     }
 
-    internal void DetachFromScene()
+    internal void DetachFromWorld()
     {
         OnDetach();
         _started = false;
-        Scene = null!;
+        World = null!;
     }
 
     internal void Unlink()
