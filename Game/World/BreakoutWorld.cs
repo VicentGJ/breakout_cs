@@ -28,6 +28,14 @@ sealed class BreakoutWorld : World
     public override void Setup()
     {
         AddObject(new GameState());
+        LoadScene(CreateScene());
+    }
+
+    // Everything except GameState lives in the scene, so loading it again restarts the game.
+    internal Scene CreateScene() => new("breakout", PopulateScene);
+
+    private void PopulateScene()
+    {
         AddObject(new Paddle());
         AddObject(new Ball());
         AddObject(new RectangleShape
@@ -39,6 +47,11 @@ sealed class BreakoutWorld : World
             StrokeColor = BreakoutTheme.BorderColor
         });
         AddObject(new Hud());
+
+        foreach (Brick brick in BrickWallObjects.Create(Arena))
+        {
+            AddObject(brick);
+        }
     }
 
     public override void Update(float dt)

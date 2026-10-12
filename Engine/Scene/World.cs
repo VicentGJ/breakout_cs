@@ -8,8 +8,11 @@ abstract class World
     private readonly List<GameObject> _dispatchList = [];
     private int _nextGameObjectId = 1;
     private bool _setupComplete;
+    private Scene? _pendingScene;
 
     public EventBus Events { get; } = new();
+
+    public Scene? CurrentScene { get; private set; }
 
     internal AudioSystem? Audio { get; private set; }
 
@@ -39,6 +42,7 @@ abstract class World
         }
 
         Register(gameObject);
+        CurrentScene?.Roots.Add(gameObject);
     }
 
     // Removes an object together with its whole subtree.
@@ -51,6 +55,14 @@ abstract class World
 
         gameObject.Unlink();
         Unregister(gameObject);
+        CurrentScene?.Roots.Remove(gameObject);
+    }
+
+    // Request only: the switch runs at the end of the frame (FlushSceneChange), never mid-callback.
+    // A later request replaces an earlier one. Objects added during Setup persist across scenes.
+    public void LoadScene(Scene scene)
+    {
+        _pendingScene = scene;
     }
 
     // First object of type T, or null. Look up in Start, not in OnAttach.
@@ -144,6 +156,27 @@ abstract class World
 
         _setupComplete = true;
         Setup();
+    }
+
+    internal void FlushSceneChange()
+    {
+        if (_pendingScene is not { } next)
+        {
+            return;
+        }
+
+        _pendingScene = null;
+        string? previousPath = CurrentScene?.Path;
+
+        if (CurrentScene is not null)
+        {
+            Events.Publish(new SceneUnloadingEvent(CurrentScene.Path));
+            CurrentScene.Unload(this);
+        }
+
+        CurrentScene = next;
+        next.Load();
+        Events.Publish(new SceneLoadedEvent(next.Path, previousPath));
     }
 
     internal void BindAudio(AudioSystem audio)

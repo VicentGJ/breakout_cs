@@ -4,8 +4,7 @@ namespace Breakout;
 
 sealed class GameState : GameObject
 {
-    private Paddle _paddle = null!;
-    private Ball _ball = null!;
+    private IDisposable? _sceneLoadedSubscription;
     private IDisposable? _ballOutOfBoundsSubscription;
     private IDisposable? _brickDestroyedSubscription;
 
@@ -13,27 +12,22 @@ sealed class GameState : GameObject
 
     public int Score { get; set; }
 
-    public int Lives { get; set; }
+    public int Lives { get; set; } = BreakoutRules.StartingLives;
 
     public int BricksRemaining { get; set; }
 
     protected override void OnAttach()
     {
+        _sceneLoadedSubscription = World.Events.Subscribe<SceneLoadedEvent>(OnSceneLoaded);
         _ballOutOfBoundsSubscription = World.Events.Subscribe<BallOutOfBoundsEvent>(OnBallOutOfBounds);
         _brickDestroyedSubscription = World.Events.Subscribe<BrickDestroyedEvent>(OnBrickDestroyed);
     }
 
     protected override void OnDetach()
     {
+        _sceneLoadedSubscription?.Dispose();
         _ballOutOfBoundsSubscription?.Dispose();
         _brickDestroyedSubscription?.Dispose();
-    }
-
-    public override void Start()
-    {
-        _paddle = World.Find<Paddle>()!;
-        _ball = World.Find<Ball>()!;
-        StartNewGame();
     }
 
     public override void Update(float dt)
@@ -42,34 +36,21 @@ sealed class GameState : GameObject
 
         if (Phase is (GamePhase.Won or GamePhase.Lost) && world.Input.ConfirmPressed)
         {
-            StartNewGame();
+            World.LoadScene(world.CreateScene());
         }
     }
 
-    private void StartNewGame()
+    // Runs when the scene's objects are in place. A restart resets the run; a new scene keeps it.
+    private void OnSceneLoaded(SceneLoadedEvent evt)
     {
-        BreakoutWorld world = (BreakoutWorld)World;
-        Score = 0;
-        Lives = BreakoutRules.StartingLives;
-        RebuildBrickWall(world);
+        if (evt.IsRestart)
+        {
+            Score = 0;
+            Lives = BreakoutRules.StartingLives;
+        }
+
+        BricksRemaining = World.FindAll<Brick>().Count();
         ResetRound();
-    }
-
-    private void RebuildBrickWall(BreakoutWorld world)
-    {
-        foreach (Brick brick in World.FindAll<Brick>().ToList())
-        {
-            World.RemoveObject(brick);
-        }
-
-        IReadOnlyList<Brick> bricks = BrickWallObjects.Create(world.Arena);
-
-        foreach (Brick brick in bricks)
-        {
-            World.AddObject(brick);
-        }
-
-        BricksRemaining = bricks.Count;
     }
 
     private void ResetRound()
@@ -82,24 +63,26 @@ sealed class GameState : GameObject
 
     private void ResetRoundObjects(BreakoutWorld world)
     {
-        _paddle.Active = true;
-        _ball.Active = true;
+        Paddle paddle = World.Find<Paddle>()!;
+        Ball ball = World.Find<Ball>()!;
+        paddle.Active = true;
+        ball.Active = true;
 
-        Transform2D paddleTransform = _paddle.Transform2D;
+        Transform2D paddleTransform = paddle.Transform2D;
         paddleTransform.Position = new Vector2(
             world.Arena.X + world.Arena.Width * 0.5f,
             world.ArenaBottom - BreakoutRules.PaddleFloorOffset + BreakoutRules.PaddleSize.Y * 0.5f);
         paddleTransform.Rotation = 0f;
         paddleTransform.Scale = Vector2.One;
-        _paddle.Transform2D = paddleTransform;
+        paddle.Transform2D = paddleTransform;
 
-        Transform2D ballTransform = _ball.Transform2D;
+        Transform2D ballTransform = ball.Transform2D;
         ballTransform.Position = Vector2.Zero;
         ballTransform.Rotation = 0f;
         ballTransform.Scale = Vector2.One;
-        _ball.PreviousPosition = Vector2.Zero;
-        _ball.Velocity = Vector2.Zero;
-        _ball.Transform2D = ballTransform;
+        ball.PreviousPosition = Vector2.Zero;
+        ball.Velocity = Vector2.Zero;
+        ball.Transform2D = ballTransform;
     }
 
     private void OnBallOutOfBounds(BallOutOfBoundsEvent evt)
